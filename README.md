@@ -253,11 +253,12 @@ The existing `A1/UML` folder contains the assignment's UML deliverables:
 
 ## Why Context API?
 
-Context API is used because user information, theme, cart, orders and restaurant data are required on different screens.
-
-Without Context, the same data would need to be passed through many components using props.
-
-One drawback is that Context consumers can re-render when the Context value changes.
+- Authentication and theme settings are shared across multiple screens.
+- Context avoids passing the same values through intermediate components as props.
+- The `useAuth` and `useTheme` hooks provide convenient access to this shared state.
+- Role-based Customer and Manager navigation reads the active user from `AuthContext`.
+- Each context keeps its shared state in one source of truth.
+- A drawback is that consumers can re-render when their context value changes.
 
 ---
 
