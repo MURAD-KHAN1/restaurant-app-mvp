@@ -8,21 +8,6 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useForm } from '../hooks/useForm';
 import { TIME_SLOTS, useReservation } from '../hooks/useReservation';
 
-function validateReservation(values) {
-  const errors = {};
-  if (!values.name.trim()) errors.name = 'Your name is required.';
-  if (!/^03\d{2}-\d{7}$/.test(values.phone)) errors.phone = 'Use 03XX-XXXXXXX.';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date)) errors.date = 'Use YYYY-MM-DD.';
-  else {
-    const selected = new Date(values.date + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (Number.isNaN(selected.getTime()) || selected < today || selected.toISOString().slice(0, 10) !== values.date) errors.date = 'Choose a valid future date.';
-  }
-  if (Number(values.partySize) < 1 || Number(values.partySize) > 12) errors.partySize = 'Party size must be 1–12.';
-  return errors;
-}
-
 export default function ReservationScreen() {
   const { colors } = useTheme();
   const reservation = useReservation();
@@ -34,10 +19,8 @@ export default function ReservationScreen() {
     phone: reservation.contactDetails.phone,
     date: reservation.selectedDate,
     partySize: String(reservation.partySize),
-  }, validateReservation, () => {
-    const result = reservation.createReservation();
-    if (!result.success) Alert.alert('Reservation unavailable', result.error);
-    else setConfirmation(result.reservation);
+  }, reservation.validateForm, (values) => {
+    setConfirmation(reservation.getBookingSummary(values));
   });
 
   useEffect(() => {
@@ -45,6 +28,18 @@ export default function ReservationScreen() {
     setSelectedDate(form.values.date);
     setPartySize(Number(form.values.partySize) || 0);
   }, [form.values.date, form.values.name, form.values.partySize, form.values.phone, setContactDetails, setPartySize, setSelectedDate]);
+
+  const confirmReservation = () => {
+    if (!confirmation) return;
+    const result = reservation.createReservation(confirmation);
+    if (!result.success) {
+      setConfirmation(null);
+      Alert.alert('Reservation unavailable', result.error);
+      return;
+    }
+    setConfirmation(null);
+    Alert.alert('Reservation requested', 'Your booking is pending manager approval.');
+  };
 
   const field = (name, label, placeholder, keyboardType = 'default') => (
     <View style={styles.field}>
@@ -88,6 +83,7 @@ export default function ReservationScreen() {
               );
             })}
           </ScrollView>
+          {form.errors.time ? <Text style={[styles.error, { color: colors.danger }]}>{form.errors.time}</Text> : null}
           <Text style={[styles.label, { color: colors.text }]}>Available table</Text>
           {reservation.availability.length ? reservation.availability.map((table) => {
             const selected = reservation.selectedTable?.id === table.id;
@@ -99,6 +95,7 @@ export default function ReservationScreen() {
               </Pressable>
             );
           }) : <Text style={[styles.noTables, { color: colors.danger }]}>No suitable tables are free at this time.</Text>}
+          {form.errors.table ? <Text style={[styles.error, { color: colors.danger }]}>{form.errors.table}</Text> : null}
           <Pressable onPress={form.handleSubmit} style={({ pressed }) => [styles.reserveButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.reserveText}>Request reservation</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></Pressable>
         </View>
 
@@ -115,10 +112,12 @@ export default function ReservationScreen() {
       <Modal visible={Boolean(confirmation)} transparent animationType='fade' onRequestClose={() => setConfirmation(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-            <View style={[styles.successIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='checkmark-circle' size={48} color={colors.success} /></View>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Reservation requested</Text>
-            <Text style={[styles.modalText, { color: colors.secondaryText }]}>Your request for {confirmation?.partySize} guests on {confirmation?.date} at {confirmation?.time} is pending manager approval.</Text>
-            <Pressable onPress={() => setConfirmation(null)} style={[styles.modalButton, { backgroundColor: colors.primary }]}><Text style={styles.reserveText}>Done</Text></Pressable>
+            <View style={[styles.successIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='calendar-outline' size={42} color={colors.primary} /></View>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Confirm reservation</Text>
+            <Text style={[styles.modalText, { color: colors.secondaryText }]}>Please review your booking before it is saved.</Text>
+            <Text style={[styles.bookingSummary, { color: colors.text }]}>{confirmation?.customerName}{'\n'}{confirmation?.date} at {confirmation?.time}{'\n'}{confirmation?.partySize} guests · {confirmation?.tableName}{'\n'}{confirmation?.phone}</Text>
+            <Pressable onPress={confirmReservation} style={[styles.modalButton, { backgroundColor: colors.primary }]}><Text style={styles.reserveText}>Confirm</Text></Pressable>
+            <Pressable onPress={() => setConfirmation(null)} style={styles.modalCancelButton}><Text style={[styles.modalCancelText, { color: colors.secondaryText }]}>Keep editing</Text></Pressable>
           </View>
         </View>
       </Modal>
@@ -166,5 +165,8 @@ const styles = StyleSheet.create({
   successIcon: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   modalTitle: { fontSize: 22, fontWeight: '900', marginTop: 15 },
   modalText: { fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 8 },
+  bookingSummary: { fontSize: 14, lineHeight: 23, textAlign: 'center', fontWeight: '700', marginTop: 12 },
   modalButton: { alignSelf: 'stretch', minHeight: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+  modalCancelButton: { minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  modalCancelText: { fontSize: 13, fontWeight: '800' },
 });
