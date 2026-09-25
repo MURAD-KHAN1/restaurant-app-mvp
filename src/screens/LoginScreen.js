@@ -13,13 +13,13 @@ function validateLogin(values) {
   const errors = {};
   if (!EMAIL_PATTERN.test(values.email.trim())) errors.email = 'Enter a valid email address.';
   if (!values.password) errors.password = 'Password is required.';
+  else if (values.password.length < 8 || !/\d/.test(values.password)) errors.password = 'Use at least 8 characters and one number.';
   return errors;
 }
 
 function validateSignup(values) {
   const errors = validateLogin(values);
   if (!values.name.trim()) errors.name = 'Full name is required.';
-  if (values.password.length < 8 || !/\d/.test(values.password)) errors.password = 'Use at least 8 characters and one number.';
   if (values.confirmPassword !== values.password) errors.confirmPassword = 'Passwords do not match.';
   return errors;
 }
