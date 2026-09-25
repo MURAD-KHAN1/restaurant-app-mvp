@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CategoryChip from '../components/CategoryChip';
 import EmptyState from '../components/EmptyState';
@@ -18,14 +18,19 @@ const SORT_OPTIONS = ['Featured', 'Price: Low', 'Price: High', 'Favourites'];
 export default function MenuScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { menuItems } = useRestaurant();
+  const { menuItems: sharedMenuItems } = useRestaurant();
   const { addItem, itemCount } = useCart();
+  const sharedMenuRef = useRef(sharedMenuItems);
   const searchInputRef = useRef(null);
   const listRef = useRef(null);
   const renderCount = useRef(0);
   const refreshTimerRef = useRef(null);
   renderCount.current += 1;
 
+  const [menuItems, setMenuItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [sort, setSort] = useState('Featured');
@@ -34,6 +39,42 @@ export default function MenuScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const debouncedSearch = useDebounce(search.trim(), 350);
+
+  useEffect(() => {
+    sharedMenuRef.current = sharedMenuItems;
+    if (!isLoading && !error) setMenuItems(sharedMenuItems);
+  }, [error, isLoading, sharedMenuItems]);
+
+  useEffect(() => {
+    let isActive = true;
+    let timerId;
+    setIsLoading(true);
+    setError(null);
+
+    const menuPromise = new Promise((resolve, reject) => {
+      timerId = setTimeout(() => {
+        const latestMenu = sharedMenuRef.current;
+        if (Array.isArray(latestMenu)) resolve(latestMenu);
+        else reject(new Error('Menu could not be loaded. Please try again.'));
+      }, 1500);
+    });
+
+    menuPromise
+      .then((items) => {
+        if (isActive) setMenuItems(items);
+      })
+      .catch((loadError) => {
+        if (isActive) setError(loadError.message || 'Menu could not be loaded. Please try again.');
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+      clearTimeout(timerId);
+    };
+  }, [loadAttempt]);
 
   useEffect(() => {
     if (debouncedSearch.length < 2) return;
@@ -59,6 +100,12 @@ export default function MenuScreen({ navigation }) {
     if (sort === 'Price: High') return [...result].sort((a, b) => b.price - a.price);
     return [...result].sort((a, b) => Number(b.isSpecial) - Number(a.isSpecial));
   }, [category, debouncedSearch, favourites, menuItems, sort]);
+
+  useLayoutEffect(() => {
+    const title = 'Menu (' + visibleItems.length + ')';
+    navigation.setOptions({ title, tabBarLabel: title });
+  }, [navigation, visibleItems.length]);
+
   const specials = useMemo(() => menuItems.filter((item) => item.isSpecial && item.isAvailable), [menuItems]);
   const firstName = user?.name?.split(' ')[0] || 'Guest';
   const hour = new Date().getHours();
@@ -83,8 +130,40 @@ export default function MenuScreen({ navigation }) {
   const refresh = () => {
     setRefreshing(true);
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    refreshTimerRef.current = setTimeout(() => setRefreshing(false), 700);
+    refreshTimerRef.current = setTimeout(() => {
+      setMenuItems(sharedMenuRef.current);
+      setRefreshing(false);
+    }, 700);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingState}>
+          <View style={[styles.loadingIcon, { backgroundColor: colors.surfaceMuted }]}>
+            <Ionicons name='restaurant' size={34} color={colors.primary} />
+          </View>
+          <ActivityIndicator size='large' color={colors.primary} />
+          <Text style={[styles.loadingTitle, { color: colors.text }]}>Loading our menu…</Text>
+          <Text style={[styles.loadingMessage, { color: colors.secondaryText }]}>Fresh dishes are being prepared for you.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon='alert-circle-outline'
+          title='Unable to load menu'
+          message={error}
+          actionLabel='Retry'
+          onAction={() => setLoadAttempt((current) => current + 1)}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const header = (
     <View>
@@ -224,6 +303,10 @@ function SpecialTile({ item, colors, onPress }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  loadingIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  loadingTitle: { fontSize: 19, fontWeight: '900', marginTop: 14 },
+  loadingMessage: { fontSize: 13, textAlign: 'center', marginTop: 5 },
   listContent: { paddingBottom: 24 },
   emptyContent: { flexGrow: 1 },
   hero: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
