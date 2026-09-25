@@ -213,6 +213,14 @@ restaurant-app-mvp
 
 ---
 
+## Question 1 - Software Requirements Specification
+
+The complete Software Requirements Specification is available at `A1/SRS.pdf`.
+It defines the frontend-only scope and the separate Customer and Manager roles.
+The document covers functional requirements, non-functional requirements, the mock client-side data model, and frontend screen planning without duplicating the full SRS here.
+
+---
+
 ## Hooks Used
 
 | Hook | Purpose |
