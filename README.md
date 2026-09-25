@@ -264,7 +264,13 @@ The existing `A1/UML` folder contains the assignment's UML deliverables:
 
 ## Why useReducer for Cart?
 
-The cart has many related actions:
+The cart has many related state transitions that must stay consistent.
+A reducer centralizes those transitions in one place.
+Named actions make every cart change explicit and predictable.
+The reducer stays pure by returning new state without side effects.
+For simple isolated values such as search text or modal visibility, `useState` is enough.
+
+The supported cart actions are:
 
 - Add Item
 - Remove Item
@@ -274,10 +280,6 @@ The cart has many related actions:
 - Clear Cart
 - Apply Promo
 - Remove Promo
-
-`useReducer` keeps these actions in one organized reducer.
-
-For simple values like search text or modal visibility, `useState` is enough.
 
 ---
 
@@ -401,18 +403,20 @@ The app does not use a real database.
 
 ## Cart Reducer Test Cases
 
-| # | Action | Expected Result |
+| Action | Initial State | Expected State |
 | --- | --- | --- |
-| 1 | `ADD_ITEM` | Item added to cart |
-| 2 | Same `ADD_ITEM` again | Quantity increases |
-| 3 | `REMOVE_ITEM` | Item removed |
-| 4 | `INCREMENT` | Quantity +1 |
-| 5 | `DECREMENT` | Quantity -1 |
-| 6 | `UPDATE_NOTE` | Special note updated |
-| 7 | `CLEAR_CART` | Cart becomes empty |
-| 8 | `APPLY_PROMO` WELCOME10 | 10% discount |
-| 9 | `APPLY_PROMO` FEAST20 | 20% discount |
-| 10 | `REMOVE_PROMO` | Promo removed |
+| `ADD_ITEM` with an available item | Empty cart | Item is added with quantity `1` and an empty note |
+| `ADD_ITEM` with the same item | Item already has quantity `1` | Existing item quantity becomes `2` |
+| `ADD_ITEM` with an unavailable item | Cart contains any items | State remains unchanged |
+| `REMOVE_ITEM` | Target item exists in the cart | Target item is removed |
+| `INCREMENT` | Target item has quantity `1` | Target item quantity becomes `2` |
+| `DECREMENT` | Target item has quantity `2` | Target item quantity becomes `1` |
+| `DECREMENT` | Target item has quantity `1` | Target item is removed from the cart |
+| `UPDATE_NOTE` | Target item has an empty note | Target item contains the supplied special instruction |
+| `CLEAR_CART` | Cart contains items and a promo | Items and promo values return to initial state |
+| `APPLY_PROMO` with `WELCOME10` | No promo is applied | Promo code is `WELCOME10` and discount is `10%` |
+| `APPLY_PROMO` with `FEAST20` | No promo is applied | Promo code is `FEAST20` and discount is `20%` |
+| `REMOVE_PROMO` | A valid promo is applied | Promo code is empty and discount returns to `0%` |
 
 
 
