@@ -24,7 +24,9 @@ export default function MenuScreen({ navigation }) {
   const searchInputRef = useRef(null);
   const listRef = useRef(null);
   const renderCount = useRef(0);
+  const previousQueryRef = useRef('');
   const refreshTimerRef = useRef(null);
+  // Changing a ref does not cause a re-render, while changing state does.
   renderCount.current += 1;
 
   const [menuItems, setMenuItems] = useState([]);
@@ -32,13 +34,14 @@ export default function MenuScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [search, setSearch] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [category, setCategory] = useState('All');
   const [sort, setSort] = useState('Featured');
   const [favourites, setFavourites] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const debouncedSearch = useDebounce(search.trim(), 350);
+  const debouncedSearch = useDebounce(search.trim(), 400);
 
   useEffect(() => {
     sharedMenuRef.current = sharedMenuItems;
@@ -78,6 +81,8 @@ export default function MenuScreen({ navigation }) {
 
   useEffect(() => {
     if (debouncedSearch.length < 2) return;
+    if (previousQueryRef.current.toLowerCase() === debouncedSearch.toLowerCase()) return;
+    previousQueryRef.current = debouncedSearch;
     setRecentSearches((current) => [
       debouncedSearch,
       ...current.filter((item) => item.toLowerCase() !== debouncedSearch.toLowerCase()),
@@ -191,6 +196,8 @@ export default function MenuScreen({ navigation }) {
             ref={searchInputRef}
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder='Search dishes or ingredients'
             placeholderTextColor={colors.secondaryText}
             returnKeyType='search'
@@ -212,7 +219,7 @@ export default function MenuScreen({ navigation }) {
         </View>
       ) : null}
 
-      {recentSearches.length ? (
+      {isSearchFocused && !search && recentSearches.length ? (
         <View style={styles.recents}>
           <Text style={[styles.metaLabel, { color: colors.secondaryText }]}>RECENT</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -260,7 +267,7 @@ export default function MenuScreen({ navigation }) {
         ListEmptyComponent={<EmptyState icon='search-outline' title='No dishes found' message='Try a different search, category, or show all favourites.' actionLabel='Clear filters' onAction={() => { setSearch(''); setCategory('All'); setSort('Featured'); }} />}
         contentContainerStyle={visibleItems.length ? styles.listContent : styles.emptyContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
-        onScroll={(event) => setShowBackToTop(event.nativeEvent.contentOffset.y > 520)}
+        onScroll={(event) => setShowBackToTop(event.nativeEvent.contentOffset.y > 300)}
         scrollEventThrottle={100}
         keyboardShouldPersistTaps='handled'
         initialNumToRender={4}
@@ -269,7 +276,7 @@ export default function MenuScreen({ navigation }) {
         windowSize={7}
       />
       {showBackToTop ? (
-        <Pressable accessibilityLabel='Back to top' onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })} style={[styles.topButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
+        <Pressable accessibilityLabel='Back to top' onPress={() => listRef.current?.scrollToOffset({ offset: 0 })} style={[styles.topButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
           <Ionicons name='arrow-up' size={22} color='#FFFFFF' />
         </Pressable>
       ) : null}
