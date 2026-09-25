@@ -9,6 +9,7 @@ function MenuItemCard({ item, onAdd, onToggleFavourite, isFavourite }) {
   const [imageFailed, setImageFailed] = useState(false);
   const categoryColor = categoryColors[item.category] ?? colors.primary;
   const hasImage = Boolean(item.image) && !imageFailed;
+  console.log('[MenuItemCard render]', item.id, item.name);
 
   useEffect(() => setImageFailed(false), [item.image]);
 

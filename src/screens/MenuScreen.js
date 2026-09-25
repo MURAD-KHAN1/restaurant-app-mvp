@@ -13,7 +13,7 @@ import { CATEGORY_ICONS, MENU_CATEGORIES } from '../data/menu';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatCurrency } from '../theme/colors';
 
-const SORT_OPTIONS = ['Featured', 'Price: Low', 'Price: High', 'Favourites'];
+const SORT_OPTIONS = ['Featured', 'Price Low to High', 'Price High to Low', 'Name A to Z', 'Favourites'];
 
 export default function MenuScreen({ navigation }) {
   const { colors } = useTheme();
@@ -93,6 +93,7 @@ export default function MenuScreen({ navigation }) {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
   }, []);
 
+  // Filtered and sorted menu items are derived data, so useMemo is preferable to separate state.
   const visibleItems = useMemo(() => {
     const query = debouncedSearch.toLowerCase();
     const result = menuItems.filter((item) => {
@@ -101,8 +102,9 @@ export default function MenuScreen({ navigation }) {
       return matchesCategory && matchesSearch;
     });
     if (sort === 'Favourites') return result.filter((item) => favourites.includes(item.id));
-    if (sort === 'Price: Low') return [...result].sort((a, b) => a.price - b.price);
-    if (sort === 'Price: High') return [...result].sort((a, b) => b.price - a.price);
+    if (sort === 'Price Low to High') return [...result].sort((a, b) => a.price - b.price);
+    if (sort === 'Price High to Low') return [...result].sort((a, b) => b.price - a.price);
+    if (sort === 'Name A to Z') return [...result].sort((a, b) => a.name.localeCompare(b.name));
     return [...result].sort((a, b) => Number(b.isSpecial) - Number(a.isSpecial));
   }, [category, debouncedSearch, favourites, menuItems, sort]);
 

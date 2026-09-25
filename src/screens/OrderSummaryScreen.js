@@ -9,6 +9,9 @@ import { useOrders } from '../context/OrdersContext';
 import { useTheme } from '../context/ThemeContext';
 import { formatCurrency } from '../theme/colors';
 
+const SERVICE_CHARGE_RATE = 0.05;
+const SALES_TAX_RATE = 0.15;
+
 const OrderLine = React.memo(function OrderLine({ item, colors }) {
   return (
     <View style={[styles.itemRow, { borderColor: colors.border }]}>
@@ -43,8 +46,8 @@ export default function OrderSummaryScreen({ navigation }) {
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const serviceCharge = subtotal * 0.05;
-    const salesTax = subtotal * 0.15;
+    const serviceCharge = subtotal * SERVICE_CHARGE_RATE;
+    const salesTax = subtotal * SALES_TAX_RATE;
     const discount = subtotal * (discountPercent / 100);
     return { subtotal, serviceCharge, salesTax, discount, grandTotal: subtotal + serviceCharge + salesTax - discount };
   }, [discountPercent, items]);
