@@ -47,7 +47,7 @@ New mock Customer or Manager accounts can also be created from the Sign Up tab. 
 | Question | Deliverable | Main files |
 | --- | --- | --- |
 | 3 | Login/signup with validation, mock users, Customer/Manager roles, one-second simulated login, loading state, and successful role navigation | `src/screens/LoginScreen.js`, `src/data/users.js` |
-| 4 | Menu with 16 dishes, four categories, Daily Specials, unavailable states, FlatList, state/effects, and pull-to-refresh | `src/screens/MenuScreen.js`, `src/data/menu.js` |
+| 4 | Menu with 20 dishes, four categories, Daily Specials, unavailable states, FlatList, state/effects, and pull-to-refresh | `src/screens/MenuScreen.js`, `src/data/menu.js` |
 | 5 | Search/ref controls with focus, clear, debounce, five recent searches, render counter, Back to Top, and empty state | `src/screens/MenuScreen.js`, `src/hooks/useDebounce.js` |
 | 6 | Global authentication/theme state, custom context hooks, light/dark theme, profile, and manager-only navigation | `src/context/AuthContext.js`, `src/context/ThemeContext.js`, `src/screens/ProfileScreen.js`, `src/navigation/AppNavigator.js` |
 | 7 | Reducer-driven cart with all required actions, promo codes, notes, quantities, and tab badge | `src/reducers/cartReducer.js`, `src/context/CartContext.js`, `src/screens/CartScreen.js` |

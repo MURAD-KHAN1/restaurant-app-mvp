@@ -10,7 +10,7 @@ function CartItemRow({ item, onIncrement, onDecrement, onRemove, onNoteChange })
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.topRow}>
         <View style={[styles.iconBox, { backgroundColor: colors.surfaceMuted }]}>
-          <Ionicons name={item.image || 'restaurant-outline'} size={28} color={colors.primary} />
+          <Ionicons name={item.icon || 'restaurant-outline'} size={28} color={colors.primary} />
         </View>
         <View style={styles.details}>
           <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>

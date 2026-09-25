@@ -37,7 +37,7 @@ export default function ManagerDashboardScreen() {
       Alert.alert('Missing details', 'Enter a name, description, and valid price.');
       return;
     }
-    addMenuItem({ ...newItem, name: newItem.name.trim(), description: newItem.description.trim(), price, image: 'restaurant-outline', isSpecial: false, isAvailable: true });
+    addMenuItem({ ...newItem, name: newItem.name.trim(), description: newItem.description.trim(), price, image: null, icon: 'restaurant-outline', isSpecial: false, isAvailable: true });
     setNewItem(EMPTY_ITEM);
     setShowAddItem(false);
   };
@@ -115,7 +115,7 @@ export default function ManagerDashboardScreen() {
             <View style={styles.menuHeading}><Text style={[styles.sectionTitle, { color: colors.text }]}>Menu Management</Text><Pressable onPress={() => setShowAddItem(true)} style={[styles.addButton, { backgroundColor: colors.primary }]}><Ionicons name='add' size={18} color='#FFFFFF' /><Text style={styles.whiteButtonText}>Add item</Text></Pressable></View>
             {menuItems.map((item) => (
               <View key={item.id} style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }, !item.isAvailable && styles.unavailable]}>
-                <View style={[styles.menuIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name={item.image || 'restaurant-outline'} size={25} color={colors.primary} /></View>
+                <View style={[styles.menuIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name={item.icon || 'restaurant-outline'} size={25} color={colors.primary} /></View>
                 <View style={styles.menuDetails}>
                   <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
                   <Text style={[styles.meta, { color: colors.secondaryText }]}>{item.category} · {formatCurrency(item.price)}</Text>

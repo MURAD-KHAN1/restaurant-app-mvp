@@ -8,6 +8,18 @@ const MENU_KEY = '@restaurant/menu';
 const RESERVATIONS_KEY = '@restaurant/reservations';
 const RestaurantContext = createContext(undefined);
 
+function mergeSavedMenu(savedMenu) {
+  const savedItems = JSON.parse(savedMenu);
+  if (!Array.isArray(savedItems)) return initialMenuItems;
+  const savedIds = new Set(savedItems.map((item) => item.id));
+  const restored = savedItems.map((item) => {
+    const currentItem = initialMenuItems.find((candidate) => candidate.id === item.id);
+    if (!currentItem) return { ...item, image: null, icon: item.icon || 'restaurant-outline' };
+    return { ...currentItem, ...item, image: currentItem.image, icon: currentItem.icon };
+  });
+  return [...restored, ...initialMenuItems.filter((item) => !savedIds.has(item.id))];
+}
+
 export function RestaurantProvider({ children }) {
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [reservations, setReservations] = useState(initialReservations);
@@ -19,7 +31,7 @@ export function RestaurantProvider({ children }) {
       try {
         const [[, savedMenu], [, savedReservations]] = await AsyncStorage.multiGet([MENU_KEY, RESERVATIONS_KEY]);
         if (!active) return;
-        if (savedMenu) setMenuItems(JSON.parse(savedMenu));
+        if (savedMenu) setMenuItems(mergeSavedMenu(savedMenu));
         if (savedReservations) setReservations(JSON.parse(savedReservations));
       } catch (error) {
         console.warn('Could not load restaurant data:', error);
@@ -32,7 +44,10 @@ export function RestaurantProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (isInitialized) AsyncStorage.setItem(MENU_KEY, JSON.stringify(menuItems)).catch(console.warn);
+    if (isInitialized) {
+      const serializableMenu = menuItems.map((item) => ({ ...item, image: undefined }));
+      AsyncStorage.setItem(MENU_KEY, JSON.stringify(serializableMenu)).catch(console.warn);
+    }
   }, [isInitialized, menuItems]);
 
   useEffect(() => {
