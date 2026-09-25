@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoadingScreen from '../components/LoadingScreen';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useOrders } from '../context/OrdersContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useTheme } from '../context/ThemeContext';
 import CartScreen from '../screens/CartScreen';
@@ -96,7 +97,8 @@ function ManagerTabs() {
 export default function AppNavigator() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
-  const { isInitialized } = useRestaurant();
+  const { isInitialized: isRestaurantInitialized } = useRestaurant();
+  const { isInitialized: areOrdersInitialized } = useOrders();
   const navigationTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
@@ -110,7 +112,7 @@ export default function AppNavigator() {
     },
   };
 
-  if (!isInitialized) return <LoadingScreen />;
+  if (!isRestaurantInitialized || !areOrdersInitialized) return <LoadingScreen />;
 
   return (
     <NavigationContainer theme={navigationTheme}>

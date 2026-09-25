@@ -27,11 +27,14 @@ export default function OrdersScreen() {
   const { orders } = useOrders();
   const [now, setNow] = useState(Date.now());
   const myOrders = useMemo(() => orders.filter((order) => order.customerEmail === user.email), [orders, user.email]);
+  const hasActiveOrders = useMemo(() => myOrders.some((order) => order.status !== 'Served'), [myOrders]);
 
   useEffect(() => {
+    setNow(Date.now());
+    if (!hasActiveOrders) return undefined;
     const intervalId = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [hasActiveOrders]);
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -48,10 +51,11 @@ export default function OrdersScreen() {
                 <View><Text style={[styles.orderId, { color: colors.text }]}>{order.id}</Text><Text style={[styles.orderTime, { color: colors.secondaryText }]}>Elapsed {formatElapsed(order.timestamp, now)}</Text></View>
                 <View style={[styles.statusBadge, { backgroundColor: colors.surfaceMuted }]}><View style={[styles.statusDot, { backgroundColor: order.status === 'Served' ? colors.success : colors.primary }]} /><Text style={[styles.statusText, { color: colors.text }]}>{order.status}</Text></View>
               </View>
+              <Text style={[styles.orderType, { color: colors.primary }]}>{order.type ?? 'Dine-in'} · {(order.type ?? 'Dine-in') === 'Dine-in' ? `Table ${order.table ?? 'not selected'}` : `Pickup in ${order.pickupTime}`}</Text>
               <View style={styles.itemsBox}>
                 {order.items.map((item) => <Text key={item.id} style={[styles.itemText, { color: colors.secondaryText }]}>{item.quantity} × {item.name}</Text>)}
               </View>
-              <View style={[styles.totalStrip, { borderColor: colors.border }]}><Text style={[styles.totalLabel, { color: colors.secondaryText }]}>Total</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(order.totals.grandTotal)}</Text></View>
+              <View style={[styles.totalStrip, { borderColor: colors.border }]}><Text style={[styles.totalLabel, { color: colors.secondaryText }]}>Total</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(order.total ?? order.totals?.grandTotal ?? 0)}</Text></View>
               <View style={styles.tracker}>
                 {STEPS.map((step, index) => <OrderStatusStep key={step.label} label={step.label} icon={step.icon} isComplete={index < activeIndex} isCurrent={index === activeIndex} isLast={index === STEPS.length - 1} />)}
               </View>
@@ -73,6 +77,7 @@ const styles = StyleSheet.create({
   orderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   orderId: { fontSize: 17, fontWeight: '900' },
   orderTime: { fontSize: 12, marginTop: 4 },
+  orderType: { fontSize: 12, fontWeight: '800', marginTop: 10 },
   statusBadge: { borderRadius: 15, paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 6 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 11, fontWeight: '900' },
