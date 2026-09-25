@@ -333,62 +333,9 @@ The app does not use a real database.
 | 9 | `APPLY_PROMO` FEAST20 | 20% discount |
 | 10 | `REMOVE_PROMO` | Promo removed |
 
----
 
-## Screenshots
 
-### Sign Up
-![Sign Up](screenshots/01-signup.jpeg)
 
-### Login
-![Login](screenshots/02-login.jpeg)
-
-### Home
-![Home](screenshots/03-home.jpeg)
-
-### Starters
-![Starters](screenshots/04-starters.jpeg)
-
-### All Menu
-![All Menu](screenshots/05-all-menu.jpeg)
-
-### Desserts
-![Desserts](screenshots/06-desserts.jpeg)
-
-### Mains
-![Mains](screenshots/07-mains.jpeg)
-
-### Drinks
-![Drinks](screenshots/08-drinks.jpeg)
-
-### Cart
-![Cart](screenshots/09-cart.jpeg)
-
-### Order Summary
-![Order Summary](screenshots/10-order-summary.jpeg)
-
-### Reservation
-![Reservation](screenshots/11-reservation.jpeg)
-
-### Order Tracking
-![Order Tracking](screenshots/12-order-tracking.jpeg)
-
-### Customer Profile
-![Customer Profile](screenshots/13-customer-profile.jpeg)
-
-### Manager Dashboard
-![Manager Dashboard](screenshots/14-manager-dashboard.jpeg)
-
-### Manager Reservations
-![Manager Reservations](screenshots/15-manager-reservations.jpeg)
-
-### Manager Menu Management
-![Manager Menu Management](screenshots/16-manager-menu-management.jpeg)
-
-### Manager Profile
-![Manager Profile](screenshots/17-manager-profile.jpeg)
-
----
 
 ## Demo Video
 
