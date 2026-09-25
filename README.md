@@ -334,7 +334,31 @@ The app does not use a real database.
 | 10 | `REMOVE_PROMO` | Promo removed |
 
 
+## Screenshots
 
+[View All Screenshots](screenshots/)
+
+- [01 - Sign Up](screenshots/01-signup.jpeg)
+- [02 - Login](screenshots/02-login.jpeg)
+- [03 - Home](screenshots/03-home.jpeg)
+- [04 - Starters](screenshots/04-starters.jpeg)
+- [05 - All Menu](screenshots/05-all-menu.jpeg)
+- [06 - Desserts](screenshots/06-desserts.jpeg)
+- [07 - Mains](screenshots/07-mains.jpeg)
+- [08 - Drinks](screenshots/08-drinks.jpeg)
+- [09 - Cart](screenshots/09-cart.jpeg)
+- [10 - Order Summary](screenshots/10-order-summary.jpeg)
+- [11 - Reservation](screenshots/11-reservation.jpeg)
+- [12 - Order Tracking](screenshots/12-order-tracking.jpeg)
+- [13 - Customer Profile](screenshots/13-customer-profile.jpeg)
+- [14 - Manager Dashboard](screenshots/14-manager-dashboard.jpeg)
+- [15 - Manager Reservations](screenshots/15-manager-reservations.jpeg)
+- [16 - Manager Menu Management](screenshots/16-manager-menu-management.jpeg)
+- [17 - Manager Profile](screenshots/17-manager-profile.jpeg)
+
+## Demo Video
+
+[Watch Restaurant App MVP Demo Video](https://drive.google.com/file/d/1PTc2ZH0ywbBaXqZ7p5TU4G0FlmrPgYw0/view?usp=drive_link)
 
 
 ## Demo Video
