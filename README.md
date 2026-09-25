@@ -221,6 +221,18 @@ The document covers functional requirements, non-functional requirements, the mo
 
 ---
 
+## Question 2 - UML Diagrams
+
+The existing `A1/UML` folder contains the assignment's UML deliverables:
+
+- Use Case Diagram
+- Class Diagram
+- Sequence Diagram
+- State Machine Diagram
+- Component Diagram
+
+---
+
 ## Hooks Used
 
 | Hook | Purpose |
