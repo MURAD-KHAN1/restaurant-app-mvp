@@ -1,336 +1,288 @@
-# Hiba Cafe & Restaurant — Restaurant App MVP
+# 🍽️ Hiba Cafe & Restaurant
+
+### Restaurant App MVP — React Native + Expo | Fall 2026
+
+Hiba Cafe & Restaurant is a frontend-only React Native restaurant application featuring customer ordering, reservations, live order tracking, menu browsing, cart management, dark/light themes, and a dedicated manager dashboard.
+
+![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react&logoColor=white)
+![Expo SDK 57](https://img.shields.io/badge/Expo_SDK-57-000020?logo=expo&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=111111)
+![Frontend Only](https://img.shields.io/badge/Architecture-Frontend_Only-8B5E3C)
+![Fall 2026](https://img.shields.io/badge/Academic_Term-Fall_2026-B8860B)
+
+---
 
 ## 🎥 Demo Video
 
-[▶ Watch Restaurant App MVP Demo Video](https://drive.google.com/file/d/1PTc2ZH0ywbBaXqZ7p5TU4G0FlmrPgYw0/view?usp=drive_link)
+### ▶️ Watch Full App Demo
+
+[Open Hiba Cafe & Restaurant Demo Video](https://drive.google.com/file/d/1q1kv_G3RyhxadG5vpSram7Q3Rzq7cpan/view?usp=drive_link)
+
+The demo covers the complete Customer and Manager workflow including authentication, menu browsing, search, cart, promo codes, order placement, tracking, reservations, themes, and restaurant management.
 
 ---
 
-## 📱 App Screenshots
+## 📱 App Preview
 
-### Sign Up
-<img src="screenshots/01-signup.jpeg" width="230">
+<table>
+  <tr>
+    <td align="center">
+      <img src="screenshots/04-menu-home.jpeg" alt="Hiba Cafe and Restaurant menu experience" width="230"><br>
+      <b>Menu Experience</b>
+    </td>
+    <td align="center">
+      <img src="screenshots/10-order-summary.jpeg" alt="Hiba Cafe and Restaurant order summary" width="230"><br>
+      <b>Order Summary</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="screenshots/12-order-tracking.jpeg" alt="Hiba Cafe and Restaurant live order tracking" width="230"><br>
+      <b>Live Order Tracking</b>
+    </td>
+    <td align="center">
+      <img src="screenshots/20-manager-dashboard.jpeg" alt="Hiba Cafe and Restaurant manager dashboard" width="230"><br>
+      <b>Manager Dashboard</b>
+    </td>
+  </tr>
+</table>
 
-### Login
-<img src="screenshots/02-login.jpeg" width="230">
+### 🖼️ View All Screenshots
 
-### Customer Home
-<img src="screenshots/03-home.jpeg" width="230">
+[Open the complete screenshots gallery](./screenshots)
 
-### Menu
-<img src="screenshots/05-all-menu.jpeg" width="230">
-
-### Cart
-<img src="screenshots/09-cart.jpeg" width="230">
-
-### Order Summary
-<img src="screenshots/10-order-summary.jpeg" width="230">
-
-### Reservation
-<img src="screenshots/11-reservation.jpeg" width="230">
-
-### Order Tracking
-<img src="screenshots/12-order-tracking.jpeg" width="230">
-
-### Manager Dashboard
-<img src="screenshots/14-manager-dashboard.jpeg" width="230">
-
-### Manager Reservations
-<img src="screenshots/15-manager-reservations.jpeg" width="230">
-
-### Manager Menu Management
-<img src="screenshots/16-manager-menu-management.jpeg" width="230">
-
-[View All Screenshots](screenshots/)
+The repository contains screenshots for authentication, menu browsing, search, sorting, cart, promo codes, order summary, reservations, profile and theme controls, order tracking, and the manager experience.
 
 ---
 
-## About the Project
+## 📖 About the Project
 
-Hiba Cafe & Restaurant is a frontend-only Restaurant App developed using React Native and Expo.
+Hiba Cafe & Restaurant is a frontend-only restaurant app MVP created for the Fall 2026 Mobile Application Development assignment. It provides separate Customer and Manager experiences while demonstrating reusable components, React Hooks, Context API, reducer-based state management, local persistence, navigation, themes, and performance optimization.
 
-The application provides separate experiences for Customers and Restaurant Managers.
+All application behavior uses local or mock data, so the project is straightforward to review and run in Expo without server configuration.
 
-It uses React Hooks, Context API, reducers, React Navigation, mock/local data, and AsyncStorage.
-
-There is no backend, Firebase, external API, Redux, Zustand, or real payment gateway.
-
----
-
-## Main Features
-# Hiba Cafe & Restaurant — Restaurant App MVP
-
-Hiba Cafe & Restaurant is a frontend-only restaurant mobile application built with **React Native and Expo**.
-
-The app provides separate interfaces for **Customers** and **Restaurant Managers**. It uses mock/local data, React Hooks, Context API, reducers, React Navigation, and AsyncStorage.
-
-There is **no backend, no real database, no real payment gateway, and no external API**.
-
----
-
-## Technologies Used
-
-- React Native
-- Expo
-- JavaScript
-- React Navigation
-- Context API
-- React Hooks
-- useReducer
-- AsyncStorage
-- Ionicons / Expo Vector Icons
-
----
-
-## Main Features
+## ✨ Key Features
 
 ### Customer
 
-- Login and Sign Up
-- Browse restaurant menu
-- Food categories
-- Search menu items
-- Sort menu items
-- Add favourites
-- Add items to cart
-- Change item quantity
-- Add special instructions
-- Apply promo codes
-- View Order Summary
-- Reserve a table
-- Place Dine-In or Takeaway order
-- Track order status
-- Light / Dark Theme
-- Profile and Logout
+- Login and signup
+- Role-based authentication
+- 20-item menu with unique local food images
+- Category filtering
+- 400ms debounced search
+- Recent searches
+- Sorting
+- Favourites
+- Cart management
+- Quantity controls
+- Special instructions
+- Promo codes
+- Order summary
+- Dine-in and takeaway ordering
+- Table reservation
+- Live order tracking
+- Light and dark themes
+- Profile and logout
 
 ### Manager
 
-- Manager Login
-- View incoming orders
-- Update order status
-- View reservations
-- Accept / Decline reservations
+- Manager-only dashboard
+- Incoming order management
+- Reservation management
 - Add menu items
-- Edit menu prices
-- Toggle item availability
-- Profile and Logout
+- Edit prices
+- Toggle availability
+- Profile and logout
+- Theme switching
 
----
+## 👤 Demo Accounts
 
-## Requirements
+These credentials come directly from `src/data/users.js`:
 
-- Node.js 20.19 or newer
-- npm
-- Expo Go
-- Android or iOS phone
+| Role | Name | Email | Password |
+|---|---|---|---|
+| Customer | Ayesha Khan | `customer@example.com` | `Password123` |
+| Manager | Hassan Ahmed | `manager@example.com` | `Manager123` |
 
----
+## 🛠️ Technology Stack
 
-## Installation
+| Technology | Purpose |
+|---|---|
+| React Native | Cross-platform mobile user interface |
+| Expo SDK 57 | Development runtime and tooling |
+| JavaScript | Components and application logic |
+| React Navigation | Authentication, stack, and tab navigation |
+| Context API | Shared authentication, theme, cart, order, reservation, and menu state |
+| React Hooks | Local state, effects, refs, context, reducers, memoization, and callbacks |
+| `useReducer` | Predictable action-based cart and order state transitions |
+| AsyncStorage | Local persistence for orders, reservations, and menu edits |
+| Ionicons | Consistent interface iconography |
+| Local assets | Reliable bundled menu images without runtime downloads |
 
-Open terminal in the project folder:
+No backend, Firebase, external database, or payment API is used. This is a frontend-only assignment.
 
-```powershell
-cd C:\Users\LENOVO\Desktop\MAD\restaurant-app-mvp
-```
-
-Install packages:
-
-```powershell
-npm install
-```
-
-Run the app:
-
-```powershell
-npx.cmd expo start
-```
-
-Open **Expo Go** on your phone and scan the QR code.
-
-If normal connection does not work:
-
-```powershell
-npx.cmd expo start --tunnel
-```
-
----
-
-## Test Login Accounts
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Customer | `customer@example.com` | `Password123` |
-| Manager | `manager@example.com` | `Manager123` |
-
----
-
-## Project Structure
+## 📂 Project Structure
 
 ```text
-restaurant-app-mvp
-│
-├── A1
+restaurant-app-mvp/
+├── A1/
 │   ├── SRS.pdf
-│   └── UML
-│
-├── assets
-│   └── menu
-│
-├── screenshots
-│
-├── src
-│   ├── components
-│   ├── context
-│   ├── data
-│   ├── hooks
-│   ├── navigation
-│   ├── reducers
-│   ├── screens
-│   └── theme
-│
+│   └── UML/
+├── assets/
+│   └── menu/
+├── screenshots/
+├── src/
+│   ├── components/
+│   ├── constants/
+│   ├── context/
+│   ├── data/
+│   ├── hooks/
+│   ├── navigation/
+│   ├── reducers/
+│   ├── screens/
+│   └── theme/
 ├── App.js
 ├── app.json
-├── package.json
-├── package-lock.json
 └── README.md
 ```
 
----
+## 🚀 Installation
 
-## Assignment Questions 3–10
+### Requirements
 
-| Question | Work |
-| --- | --- |
-| Q3 | Login and Signup using `useState` |
-| Q4 | Menu Browsing using `useState` and `useEffect` |
-| Q5 | Search and Scroll Controls using `useRef` |
-| Q6 | Authentication and Theme using `useContext` |
-| Q7 | Cart Management using `useReducer` |
-| Q8 | Order Summary using `useMemo`, `useCallback`, `React.memo` |
-| Q9 | Table Reservation using Custom Hooks |
-| Q10 | Order Tracking, Manager Dashboard and AsyncStorage |
+- Node.js 20.19 or newer
+- npm
+- Expo Go on a physical device, or an Android/iOS simulator
 
----
+### Clone and run
 
-## Question 1 - Software Requirements Specification
+```bash
+git clone https://github.com/MURAD-KHAN1/restaurant-app-mvp.git
+cd restaurant-app-mvp
+npm install
+npx expo start
+```
 
-The complete Software Requirements Specification is available at `A1/SRS.pdf`.
-It defines the frontend-only scope and the separate Customer and Manager roles.
-The document covers functional requirements, non-functional requirements, the mock client-side data model, and frontend screen planning without duplicating the full SRS here.
+Scan the QR code with Expo Go or select an available simulator from the Expo terminal.
 
----
+### Windows PowerShell alternative
 
-## Question 2 - UML Diagrams
+If PowerShell execution policy blocks the npm or npx wrapper scripts, use:
 
-The existing `A1/UML` folder contains the assignment's UML deliverables:
+```powershell
+npm.cmd install
+npx.cmd expo start --clear
+```
 
-- Use Case Diagram
-- Class Diagram
-- Sequence Diagram
-- State Machine Diagram
-- Component Diagram
+## ✅ Assignment Coverage — Q3 to Q10
 
----
+| Question | Implementation evidence |
+|---|---|
+| Q3 | Login and signup forms demonstrate `useState`, validation, and role-aware authentication. |
+| Q4 | Menu browsing uses `useState` and `useEffect` for interactive filtering and lifecycle behavior. |
+| Q5 | Search and scroll controls use `useRef`, including non-rendering mutable references. |
+| Q6 | Authentication and theme state use `useContext` to avoid deep prop drilling. |
+| Q7 | Cart management uses `useReducer` for explicit, predictable actions. |
+| Q8 | The order summary uses `useMemo`, `useCallback`, and `React.memo` for calculated values and render optimization. |
+| Q9 | Table reservations use reusable custom hooks and validation logic. |
+| Q10 | Order tracking, the Manager dashboard, and AsyncStorage complete the local MVP workflow. |
 
-## Hooks Used
+The Q1 Software Requirements Specification and Q2 UML deliverables remain in the `A1` folder.
 
-| Hook | Purpose |
-| --- | --- |
-| `useState` | Forms, search, filters and local UI state |
-| `useEffect` | Loading, timers and AsyncStorage |
-| `useRef` | Search input, FlatList and render counter |
-| `useContext` | Auth, Theme, Cart and Orders |
-| `useReducer` | Cart and Order state management |
-| `useMemo` | Menu filtering and total calculations |
-| `useCallback` | Stable event handlers |
-| `React.memo` | Reduce unnecessary component renders |
-| `useForm` | Reusable form validation |
-| `useDebounce` | Search delay |
-| `useReservation` | Reservation logic |
+## 🪝 React Hooks Used
 
----
+| Hook | Purpose in the application |
+|---|---|
+| `useState` | Forms, search, filters, sorting, modal visibility, and local interface state |
+| `useEffect` | Loading, timers, synchronization, and AsyncStorage persistence |
+| `useRef` | Search input, list/scroll references, timers, and render-count evidence |
+| `useContext` | Authentication, theme, cart, orders, reservations, and menu access |
+| `useReducer` | Cart and order state management through named actions |
+| `useMemo` | Menu filtering, sorting, pricing totals, and dashboard statistics |
+| `useCallback` | Stable event handlers passed to child components |
+| `React.memo` | Skipping unnecessary renders for suitable reusable components |
+| `useForm` | Reusable form values, validation, and submission behavior |
+| `useDebounce` | Applying the 400ms menu search delay |
+| `useReservation` | Reservation availability, validation, creation, and cancellation logic |
 
-## Why Context API?
+## 🧠 Context API vs Prop Drilling
 
-- Authentication and theme settings are shared across multiple screens.
-- Context avoids passing the same values through intermediate components as props.
-- The `useAuth` and `useTheme` hooks provide convenient access to this shared state.
-- Role-based Customer and Manager navigation reads the active user from `AuthContext`.
-- Each context keeps its shared state in one source of truth.
-- A drawback is that consumers can re-render when their context value changes.
+Authentication, theme, cart, orders, reservations, and menu state are required by components at different levels of the navigation tree. Context API keeps each shared concern in one source of truth and lets screens access it through focused hooks instead of forwarding the same values through intermediate components that do not use them.
 
----
+This avoids deep prop drilling, reduces coupling, keeps component props focused, and makes role-based Customer and Manager navigation easier to maintain. The drawback is that a context update can re-render all subscribed consumers. The project limits that cost by separating contexts by responsibility and using memoization where it provides a measurable benefit.
 
-## Why useReducer for Cart?
+## 🛒 useReducer vs useState
 
-The cart has many related state transitions that must stay consistent.
-A reducer centralizes those transitions in one place.
-Named actions make every cart change explicit and predictable.
-The reducer stays pure by returning new state without side effects.
-For simple isolated values such as search text or modal visibility, `useState` is enough.
+`useState` is appropriate for isolated values such as search text, input fields, or modal visibility. Cart state contains several related transitions that must remain consistent, so `useReducer` centralizes the rules, gives each transition an explicit action, and returns immutable state updates that are easier to test.
 
-The supported cart actions are:
+The cart reducer supports:
 
-- Add Item
-- Remove Item
-- Increment
-- Decrement
-- Update Note
-- Clear Cart
-- Apply Promo
-- Remove Promo
+- `ADD_ITEM`
+- `REMOVE_ITEM`
+- `INCREMENT`
+- `DECREMENT`
+- `UPDATE_NOTE`
+- `CLEAR_CART`
+- `APPLY_PROMO`
+- `REMOVE_PROMO`
 
----
+The order reducer follows the same action-based principle for order creation and forward-only status updates.
 
-## useMemo and useCallback
+## 🔄 useEffect Dependency Note
 
-`useMemo` is used for:
+An effect with an empty dependency array runs only after the initial mount:
 
-- Menu filtering
-- Sorting
-- Subtotal
-- Service charge
-- Tax
-- Discount
-- Grand total
-
-`useCallback` is used to keep functions stable when they are passed to memoized components.
-
-They should not be used unnecessarily because too much memoization can make code harder to understand.
-
----
-
-## useEffect Dependency Array
-
-If a filtering effect uses an empty dependency array:
-
-```js
+```javascript
 useEffect(() => {
-  // filtering
+  // Runs once after mount.
 }, []);
 ```
 
-it will normally run only when the screen first loads.
+If an effect reads changing values such as a category, search query, menu list, or persistent state, those values must be included in its dependency array. Otherwise, filtering or saving can use stale values and fail to update when the user changes the interface. Cleanup functions are also required when an effect creates a timer, subscription, or listener.
 
-If the category, search text, or menu items change later, the filtering will not update correctly.
+## ⚡ Performance Optimization
 
-That is why changing values must be included in the dependency array when required.
+The project uses React performance tools selectively:
 
----
+- `React.memo` lets suitable menu, cart, and order components skip rendering when their props are unchanged.
+- `useMemo` caches filtered and sorted menu results, order totals, and dashboard statistics until an input changes.
+- `useCallback` preserves function references passed to memoized children until a dependency changes.
+- `useRef` records diagnostic values without triggering an additional render.
 
-## Promo Codes
+### Before and after render behavior
 
-| Promo Code | Discount |
-| --- | --- |
+| Scenario | Before optimization | After optimization |
+|---|---|---|
+| A parent screen updates | Child cards may render even when their displayed data is unchanged. | `React.memo` can skip children whose props are unchanged. |
+| A handler is passed as a prop | A new function reference can invalidate memoization on every parent render. | `useCallback` keeps the reference stable until a dependency changes. |
+| Filters or totals are derived | Calculations can repeat during unrelated renders. | `useMemo` recalculates only when an input changes. |
+
+The repository includes a captured [search render-counter example](./screenshots/06-search-render-counter.jpeg) as render evidence. Dedicated `13-console-before.png` and `14-console-after.png` files are not linked because they are not present in the repository.
+
+Memoization is used where it improves behavior; applying it indiscriminately would add complexity and its own comparison overhead.
+
+## 💾 Local Persistence
+
+AsyncStorage keeps selected application state available across app restarts:
+
+- Orders
+- Reservations
+- Manager menu edits, including price, availability, and locally added items
+
+These are the project's selected persistent state domains. Authentication, payments, and remote synchronization are not persisted through a server because the app is frontend-only.
+
+## 🏷️ Promo Codes
+
+| Promo code | Discount |
+|---|---:|
 | `WELCOME10` | 10% |
 | `FEAST20` | 20% |
 
----
+Invalid codes leave the cart discount unchanged and show validation feedback.
 
-## Order Summary
+## 🧾 Order Summary
 
-The app calculates:
+The cart and order-summary screens calculate and present:
 
 ```text
 Subtotal
@@ -340,87 +292,78 @@ Subtotal
 = Grand Total
 ```
 
----
+The summary also preserves the chosen order type, dine-in table or takeaway time, item quantities, special instructions, and applied promo code.
 
-## Order Tracking
+## 📍 Order Tracking
 
-Order status changes as:
-
-```text
-Pending
-↓
-Preparing
-↓
-Ready
-↓
-Served
-```
-
-Demo timings:
-
-- Preparing after 10 seconds
-- Ready after 20 seconds
-- Served after 30 seconds
-
----
-
-## Table Reservation
-
-Customers can:
-
-- Select date
-- Select party size
-- Enter phone number
-- Select available time
-- Reserve a table
-- Cancel reservation
-
-Time slots are available from:
+Orders progress forward through the local status sequence:
 
 ```text
-12:00 to 22:00
+Pending → Preparing → Ready → Served
 ```
 
-Phone format:
+For the demo, an active order advances to Preparing after 10 seconds, Ready after 20 seconds, and Served after 30 seconds. The Manager dashboard can also move an order to its next valid status.
+
+## 📅 Table Reservation
+
+Customers can select a date, party size, phone number, and available time slot, then create or cancel a reservation. Time slots cover `12:00` through `22:00`, and the accepted phone format is `03XX-XXXXXXX`. Reservations are visible to the Manager for approval or decline and are saved locally with AsyncStorage.
+
+## 🧪 Cart Reducer Test Cases
+
+| Action | Initial state | Expected state |
+|---|---|---|
+| `ADD_ITEM` with an available item | Empty cart | Item is added with quantity `1` and an empty note. |
+| `ADD_ITEM` with the same item | Item already has quantity `1` | Existing item quantity becomes `2`; no duplicate row is created. |
+| `ADD_ITEM` with an unavailable item | Cart contains any items | State remains unchanged. |
+| `REMOVE_ITEM` | Target item exists | Only the target item is removed. |
+| `INCREMENT` | Target quantity is `1` | Target quantity becomes `2`. |
+| `DECREMENT` | Target quantity is `2` | Target quantity becomes `1`. |
+| `DECREMENT` | Target quantity is `1` | Target item is removed instead of reaching quantity `0`. |
+| `UPDATE_NOTE` | Target note is empty | Target item stores the supplied special instruction. |
+| `CLEAR_CART` | Cart contains items and a promo | Items and promo values return to the initial state. |
+| `APPLY_PROMO` with `WELCOME10` | No promo is active | Promo code becomes `WELCOME10` and discount becomes `10%`. |
+| `APPLY_PROMO` with `FEAST20` | No promo is active | Promo code becomes `FEAST20` and discount becomes `20%`. |
+| `REMOVE_PROMO` | A valid promo is active | Promo code is cleared and discount returns to `0%`. |
+
+## 🎬 Application Flow
+
+### Customer
 
 ```text
-03XX-XXXXXXX
+Login → Menu → Search/Filter → Cart → Promo → Order Summary → Dine-in/Takeaway → Order Tracking → Reservation → Profile
 ```
 
+### Manager
+
+```text
+Login → Dashboard → Orders → Reservations → Menu Management → Profile
+```
+
+## 📚 Academic Documentation
+
+The original assignment documents remain unchanged in the `A1` folder:
+
+- [SRS Document](./A1/SRS.pdf)
+- [UML Diagrams](./A1/UML)
+
+The Software Requirements Specification defines the frontend-only scope, Customer and Manager roles, functional and non-functional requirements, local data model, and planned screens.
+
+The UML folder contains:
+
+- Use Case Diagram
+- Class Diagram
+- Sequence Diagram
+- State Machine Diagram
+- Component Diagram
+
+Together, these files cover the assignment's Q1 requirements analysis and Q2 system modeling without duplicating the full documents in this README.
+
+## 🔗 GitHub Repository
+
+[github.com/MURAD-KHAN1/restaurant-app-mvp](https://github.com/MURAD-KHAN1/restaurant-app-mvp)
+
 ---
 
-## AsyncStorage
-
-AsyncStorage is used to save:
-
-- Orders
-- Reservations
-- Menu edits
-
-The app does not use a real database.
-
----
-
-## Cart Reducer Test Cases
-
-| Action | Initial State | Expected State |
-| --- | --- | --- |
-| `ADD_ITEM` with an available item | Empty cart | Item is added with quantity `1` and an empty note |
-| `ADD_ITEM` with the same item | Item already has quantity `1` | Existing item quantity becomes `2` |
-| `ADD_ITEM` with an unavailable item | Cart contains any items | State remains unchanged |
-| `REMOVE_ITEM` | Target item exists in the cart | Target item is removed |
-| `INCREMENT` | Target item has quantity `1` | Target item quantity becomes `2` |
-| `DECREMENT` | Target item has quantity `2` | Target item quantity becomes `1` |
-| `DECREMENT` | Target item has quantity `1` | Target item is removed from the cart |
-| `UPDATE_NOTE` | Target item has an empty note | Target item contains the supplied special instruction |
-| `CLEAR_CART` | Cart contains items and a promo | Items and promo values return to initial state |
-| `APPLY_PROMO` with `WELCOME10` | No promo is applied | Promo code is `WELCOME10` and discount is `10%` |
-| `APPLY_PROMO` with `FEAST20` | No promo is applied | Promo code is `FEAST20` and discount is `20%` |
-| `REMOVE_PROMO` | A valid promo is applied | Promo code is empty and discount returns to `0%` |
-
-
-
-
-## GitHub Repository
-
-https://github.com/MURAD-KHAN1/restaurant-app-mvp
+### Hiba Cafe & Restaurant
+**Restaurant App MVP — Fall 2026**
+Built with React Native & Expo.
