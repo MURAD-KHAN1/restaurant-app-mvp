@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_NAME, BRAND_SHORT_NAME } from '../constants/brand';
 import { useTheme } from '../context/ThemeContext';
 import { useDebounce } from '../hooks/useDebounce';
 import { useForm } from '../hooks/useForm';
@@ -13,6 +15,7 @@ export default function ReservationScreen() {
   const reservation = useReservation();
   const { setContactDetails, setPartySize, setSelectedDate } = reservation;
   const [confirmation, setConfirmation] = useState(null);
+  const [modalProgress] = useState(() => new Animated.Value(0));
   const debouncedDate = useDebounce(reservation.selectedDate, 350);
   const form = useForm({
     name: reservation.contactDetails.name,
@@ -29,6 +32,20 @@ export default function ReservationScreen() {
     setPartySize(Number(form.values.partySize) || 0);
   }, [form.values.date, form.values.name, form.values.partySize, form.values.phone, setContactDetails, setPartySize, setSelectedDate]);
 
+  useEffect(() => {
+    if (!confirmation) return undefined;
+    modalProgress.setValue(0);
+    const animation = Animated.spring(modalProgress, {
+      toValue: 1,
+      damping: 13,
+      stiffness: 165,
+      mass: 0.8,
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [confirmation, modalProgress]);
+
   const confirmReservation = () => {
     if (!confirmation) return;
     const result = reservation.createReservation(confirmation);
@@ -38,7 +55,7 @@ export default function ReservationScreen() {
       return;
     }
     setConfirmation(null);
-    Alert.alert('Reservation requested', 'Your booking is pending manager approval.');
+    Alert.alert('Reservation requested', 'Your ' + BRAND_SHORT_NAME + ' booking is pending manager approval.');
   };
 
   const field = (name, label, placeholder, keyboardType = 'default') => (
@@ -58,9 +75,10 @@ export default function ReservationScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
+      <FadeSlideView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
         <View style={styles.headingRow}>
-          <View><Text style={[styles.title, { color: colors.text }]}>Reserve a table</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>Plan a memorable meal with us.</Text></View>
+          <View style={styles.headingCopy}><Text style={[styles.title, { color: colors.text }]}>Reserve a table</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>Plan a memorable meal at {BRAND_NAME}.</Text></View>
           <View style={[styles.headerIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='calendar' size={25} color={colors.primary} /></View>
         </View>
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -96,7 +114,7 @@ export default function ReservationScreen() {
             );
           }) : <Text style={[styles.noTables, { color: colors.danger }]}>No suitable tables are free at this time.</Text>}
           {form.errors.table ? <Text style={[styles.error, { color: colors.danger }]}>{form.errors.table}</Text> : null}
-          <Pressable onPress={form.handleSubmit} style={({ pressed }) => [styles.reserveButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.reserveText}>Request reservation</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></Pressable>
+          <ScalePressable onPress={form.handleSubmit} style={[styles.reserveButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}><Text style={styles.reserveText}>Request reservation</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></ScalePressable>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Your reservations</Text>
@@ -107,18 +125,31 @@ export default function ReservationScreen() {
             {!['Cancelled', 'Declined'].includes(item.status) ? <Pressable onPress={() => Alert.alert('Cancel reservation?', 'This will release your table.', [{ text: 'Keep', style: 'cancel' }, { text: 'Cancel', style: 'destructive', onPress: () => reservation.cancelReservation(item.id) }])}><Text style={[styles.cancelText, { color: colors.danger }]}>Cancel reservation</Text></Pressable> : null}
           </View>
         )) : <EmptyState icon='calendar-outline' title='No reservations yet' message='Your upcoming table bookings will appear here.' />}
-      </ScrollView>
+        </ScrollView>
+      </FadeSlideView>
 
       <Modal visible={Boolean(confirmation)} transparent animationType='fade' onRequestClose={() => setConfirmation(null)}>
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+          <Animated.View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: colors.surface,
+                opacity: modalProgress,
+                transform: [
+                  { translateY: modalProgress.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }) },
+                  { scale: modalProgress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
+                ],
+              },
+            ]}
+          >
             <View style={[styles.successIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='calendar-outline' size={42} color={colors.primary} /></View>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Confirm reservation</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Confirm at {BRAND_SHORT_NAME}</Text>
             <Text style={[styles.modalText, { color: colors.secondaryText }]}>Please review your booking before it is saved.</Text>
             <Text style={[styles.bookingSummary, { color: colors.text }]}>{confirmation?.customerName}{'\n'}{confirmation?.date} at {confirmation?.time}{'\n'}{confirmation?.partySize} guests · {confirmation?.tableName}{'\n'}{confirmation?.phone}</Text>
-            <Pressable onPress={confirmReservation} style={[styles.modalButton, { backgroundColor: colors.primary }]}><Text style={styles.reserveText}>Confirm</Text></Pressable>
+            <ScalePressable onPress={confirmReservation} style={[styles.modalButton, { backgroundColor: colors.primary }]}><Text style={styles.reserveText}>Confirm</Text></ScalePressable>
             <Pressable onPress={() => setConfirmation(null)} style={styles.modalCancelButton}><Text style={[styles.modalCancelText, { color: colors.secondaryText }]}>Keep editing</Text></Pressable>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -127,8 +158,10 @@ export default function ReservationScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
-  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18 },
+  headingCopy: { flex: 1 },
   title: { fontSize: 27, fontWeight: '900', letterSpacing: -0.5 },
   subtitle: { fontSize: 13, marginTop: 3 },
   headerIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
@@ -150,9 +183,8 @@ const styles = StyleSheet.create({
   tableName: { fontSize: 14, fontWeight: '800' },
   tableMeta: { fontSize: 11, marginTop: 3 },
   noTables: { fontSize: 13, fontWeight: '700', marginBottom: 12 },
-  reserveButton: { minHeight: 52, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 7 },
+  reserveButton: { minHeight: 54, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 7, elevation: 4, shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   reserveText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
-  pressed: { opacity: 0.78 },
   sectionTitle: { fontSize: 21, fontWeight: '900', marginTop: 24, marginBottom: 11 },
   reservationCard: { borderWidth: 1, borderRadius: 17, padding: 14, marginBottom: 10 },
   reservationTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },

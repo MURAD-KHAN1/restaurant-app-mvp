@@ -3,6 +3,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_SHORT_NAME } from '../constants/brand';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrdersContext';
@@ -80,7 +82,7 @@ export default function OrderSummaryScreen({ navigation }) {
       promoCode,
     });
     clearCart();
-    Alert.alert('Order placed', order.id + ' is now pending.', [
+    Alert.alert(BRAND_SHORT_NAME + ' order placed', order.id + ' is now pending. We will keep you updated.', [
       { text: 'Track order', onPress: () => navigation.navigate('CustomerTabs', { screen: 'Orders' }) },
     ]);
   }, [clearCart, items, navigation, orderType, pickupTime, placeOrder, promoCode, selectedTable, totals, user.email, user.name]);
@@ -97,7 +99,8 @@ export default function OrderSummaryScreen({ navigation }) {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Header colors={colors} onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeSlideView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Items</Text>
           {items.map((item) => <OrderLine key={item.id} item={item} colors={colors} />)}
@@ -145,11 +148,12 @@ export default function OrderSummaryScreen({ navigation }) {
           <Ionicons name='information-circle-outline' size={20} color={colors.primary} />
           <Text style={[styles.noticeText, { color: colors.secondaryText }]}>This is a frontend-only demo. No payment will be collected.</Text>
         </View>
-        <Pressable onPress={confirmOrder} style={({ pressed }) => [styles.confirmButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+        <ScalePressable onPress={confirmOrder} style={[styles.confirmButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
           <Text style={styles.confirmText}>Confirm order</Text>
           <View style={styles.confirmRight}><Text style={styles.confirmText}>{formatCurrency(totals.grandTotal)}</Text><Ionicons name='checkmark-circle-outline' size={21} color='#FFFFFF' /></View>
-        </Pressable>
-      </ScrollView>
+        </ScalePressable>
+        </ScrollView>
+      </FadeSlideView>
     </SafeAreaView>
   );
 }
@@ -157,14 +161,15 @@ export default function OrderSummaryScreen({ navigation }) {
 function Header({ colors, onBack }) {
   return (
     <View style={[styles.header, { borderColor: colors.border }]}>
-      <Pressable accessibilityLabel='Back to cart' onPress={onBack} style={[styles.backButton, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='arrow-back' size={22} color={colors.text} /></Pressable>
-      <View><Text style={[styles.title, { color: colors.text }]}>Order summary</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>Review before confirming</Text></View>
+      <ScalePressable accessibilityLabel='Back to cart' onPress={onBack} style={[styles.backButton, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='arrow-back' size={22} color={colors.text} /></ScalePressable>
+      <View><Text style={[styles.title, { color: colors.text }]}>Order summary</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>{BRAND_SHORT_NAME} checkout</Text></View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  flex: { flex: 1 },
   header: { minHeight: 74, borderBottomWidth: 1, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   backButton: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 21, fontWeight: '900' },
@@ -195,8 +200,7 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: 21, fontWeight: '900' },
   notice: { borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
   noticeText: { flex: 1, fontSize: 12, lineHeight: 17 },
-  confirmButton: { minHeight: 56, borderRadius: 17, paddingHorizontal: 18, marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  confirmButton: { minHeight: 58, borderRadius: 18, paddingHorizontal: 18, marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 4, shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
   confirmRight: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   confirmText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
-  pressed: { opacity: 0.78 },
 });

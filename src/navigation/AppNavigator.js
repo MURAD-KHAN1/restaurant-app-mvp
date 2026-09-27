@@ -41,15 +41,22 @@ function TabIcon({ route, focused, color, size }) {
 function sharedTabOptions(colors) {
   return ({ route }) => ({
     headerShown: false,
+    animation: 'shift',
     tabBarHideOnKeyboard: true,
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.secondaryText,
     tabBarStyle: {
       backgroundColor: colors.tabBar,
       borderTopColor: colors.border,
-      height: 68,
-      paddingTop: 7,
-      paddingBottom: 8,
+      height: 72,
+      paddingTop: 8,
+      paddingBottom: 9,
+      borderTopWidth: 0,
+      elevation: 12,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.12,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
     },
     tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
     tabBarIcon: (props) => <TabIcon route={route} {...props} />,
@@ -77,7 +84,7 @@ function CustomerTabs() {
 
 function CustomerNavigator() {
   return (
-    <CustomerStack.Navigator screenOptions={{ headerShown: false }}>
+    <CustomerStack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
       <CustomerStack.Screen name='CustomerTabs' component={CustomerTabs} />
       <CustomerStack.Screen name='OrderSummary' component={OrderSummaryScreen} options={{ animation: 'slide_from_right' }} />
     </CustomerStack.Navigator>
@@ -116,7 +123,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
         {!user ? (
           <Stack.Screen name='Authentication' component={LoginScreen} />
         ) : user.role === 'manager' ? (

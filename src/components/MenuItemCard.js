@@ -1,20 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { categoryColors, formatCurrency } from '../theme/colors';
+import { FadeSlideView, ScalePressable } from './Motion';
 
-function MenuItemCard({ item, onAdd, onToggleFavourite, isFavourite }) {
+function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }) {
   const { colors } = useTheme();
   const [imageFailed, setImageFailed] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const [heartScale] = useState(() => new Animated.Value(1));
+  const [addFeedback] = useState(() => new Animated.Value(0));
   const categoryColor = categoryColors[item.category] ?? colors.primary;
   const hasImage = Boolean(item.image) && !imageFailed;
-  console.log('[MenuItemCard render]', item.id, item.name);
 
-  useEffect(() => setImageFailed(false), [item.image]);
+  const handleFavourite = () => {
+    Animated.sequence([
+      Animated.spring(heartScale, { toValue: 1.35, damping: 8, stiffness: 300, useNativeDriver: true }),
+      Animated.spring(heartScale, { toValue: 1, damping: 12, stiffness: 260, useNativeDriver: true }),
+    ]).start();
+    onToggleFavourite(item.id);
+  };
+
+  const handleAdd = () => {
+    onAdd(item);
+    setJustAdded(true);
+    addFeedback.setValue(0);
+    Animated.sequence([
+      Animated.spring(addFeedback, { toValue: 1, damping: 9, stiffness: 260, useNativeDriver: true }),
+      Animated.delay(520),
+      Animated.timing(addFeedback, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start(() => setJustAdded(false));
+  };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow, borderColor: colors.border }, !item.isAvailable && styles.unavailableCard]}>
+    <FadeSlideView delay={Math.min(index, 7) * 65} style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow, borderColor: colors.border }, !item.isAvailable && styles.unavailableCard]}>
       <View style={[styles.visual, { backgroundColor: colors.surfaceMuted }]}>
         {hasImage ? (
           <Image
@@ -46,14 +66,16 @@ function MenuItemCard({ item, onAdd, onToggleFavourite, isFavourite }) {
           </View>
         ) : null}
 
-        <Pressable
+        <ScalePressable
           accessibilityLabel={isFavourite ? 'Remove ' + item.name + ' from favourites' : 'Add ' + item.name + ' to favourites'}
           hitSlop={8}
-          onPress={() => onToggleFavourite(item.id)}
+          onPress={handleFavourite}
           style={[styles.heart, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
         >
-          <Ionicons name={isFavourite ? 'heart' : 'heart-outline'} size={23} color={isFavourite ? colors.danger : colors.text} />
-        </Pressable>
+          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+            <Ionicons name={isFavourite ? 'heart' : 'heart-outline'} size={23} color={isFavourite ? colors.danger : colors.text} />
+          </Animated.View>
+        </ScalePressable>
 
         {!item.isAvailable ? (
           <View pointerEvents='none' style={styles.unavailableOverlay}>
@@ -78,22 +100,32 @@ function MenuItemCard({ item, onAdd, onToggleFavourite, isFavourite }) {
               {item.isAvailable ? 'Available now' : 'Unavailable'}
             </Text>
           </View>
-          <Pressable
+          <ScalePressable
             accessibilityRole='button'
             disabled={!item.isAvailable}
-            onPress={() => onAdd(item)}
-            style={({ pressed }) => [
+            onPress={handleAdd}
+            style={[
               styles.addButton,
-              { backgroundColor: item.isAvailable ? colors.primary : colors.border },
-              pressed && item.isAvailable && styles.pressed,
+              { backgroundColor: item.isAvailable ? (justAdded ? colors.success : colors.primary) : colors.border },
             ]}
           >
-            <Ionicons name='add-circle' size={20} color='#FFFFFF' />
-            <Text style={styles.addText}>Add to cart</Text>
-          </Pressable>
+            <Animated.View
+              style={[
+                styles.addContent,
+                {
+                  transform: [{
+                    scale: addFeedback.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }),
+                  }],
+                },
+              ]}
+            >
+              <Ionicons name={justAdded ? 'checkmark-circle' : 'add-circle'} size={20} color='#FFFFFF' />
+              <Text style={styles.addText}>{justAdded ? 'Added' : 'Add to cart'}</Text>
+            </Animated.View>
+          </ScalePressable>
         </View>
       </View>
-    </View>
+    </FadeSlideView>
   );
 }
 
@@ -134,6 +166,6 @@ const styles = StyleSheet.create({
   availability: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 5 },
   availabilityText: { fontSize: 11, fontWeight: '800' },
   addButton: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 13 },
+  addContent: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   addText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
-  pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

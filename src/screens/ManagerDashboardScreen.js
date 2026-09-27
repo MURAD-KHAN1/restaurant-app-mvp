@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_SHORT_NAME } from '../constants/brand';
 import { useOrders } from '../context/OrdersContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useTheme } from '../context/ThemeContext';
@@ -53,20 +55,20 @@ export default function ManagerDashboardScreen() {
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
         <View style={styles.headingRow}>
-          <View><Text style={[styles.eyebrow, { color: colors.primary }]}>MANAGER VIEW</Text><Text style={[styles.title, { color: colors.text }]}>Dashboard</Text></View>
+          <View><Text style={[styles.eyebrow, { color: colors.primary }]}>{BRAND_SHORT_NAME.toUpperCase()} · MANAGER</Text><Text style={[styles.title, { color: colors.text }]}>Dashboard</Text></View>
           <View style={[styles.managerIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='grid' size={24} color={colors.primary} /></View>
         </View>
         <View style={styles.statsRow}>
-          <StatCard label='Active orders' value={stats.orders} icon='flame-outline' colors={colors} />
-          <StatCard label='Pending tables' value={stats.reservations} icon='calendar-outline' colors={colors} />
-          <StatCard label='Unavailable' value={stats.unavailable} icon='alert-circle-outline' colors={colors} />
+          <StatCard delay={40} label='Active orders' value={stats.orders} icon='flame-outline' colors={colors} />
+          <StatCard delay={110} label='Pending tables' value={stats.reservations} icon='calendar-outline' colors={colors} />
+          <StatCard delay={180} label='Unavailable' value={stats.unavailable} icon='alert-circle-outline' colors={colors} />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-          {SECTIONS.map((item) => <Pressable key={item.key} onPress={() => setSection(item.key)} style={[styles.tab, { backgroundColor: section === item.key ? colors.primary : colors.surface, borderColor: section === item.key ? colors.primary : colors.border }]}><Ionicons name={item.icon} size={17} color={section === item.key ? '#FFFFFF' : colors.secondaryText} /><Text style={{ color: section === item.key ? '#FFFFFF' : colors.text, fontWeight: '800', fontSize: 12 }}>{item.label}</Text></Pressable>)}
+          {SECTIONS.map((item) => <ScalePressable key={item.key} onPress={() => setSection(item.key)} style={[styles.tab, { backgroundColor: section === item.key ? colors.primary : colors.surface, borderColor: section === item.key ? colors.primary : colors.border }]}><Ionicons name={item.icon} size={17} color={section === item.key ? '#FFFFFF' : colors.secondaryText} /><Text style={{ color: section === item.key ? '#FFFFFF' : colors.text, fontWeight: '800', fontSize: 12 }}>{item.label}</Text></ScalePressable>)}
         </ScrollView>
 
         {section === 'orders' ? (
-          <View>
+          <FadeSlideView key='orders'>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Incoming Orders</Text>
             {!orders.length ? <EmptyState icon='receipt-outline' title='No incoming orders' message='Customer orders will appear here.' /> : orders.map((order) => (
               <View key={order.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -77,15 +79,15 @@ export default function ManagerDashboardScreen() {
                 {order.items.map((item) => <Text key={item.id} style={[styles.lineItem, { color: colors.secondaryText }]}>{item.quantity} × {item.name}{item.note ? ' — ' + item.note : ''}</Text>)}
                 <View style={[styles.cardFooter, { borderColor: colors.border }]}>
                   <Text style={[styles.orderTotal, { color: colors.text }]}>{formatCurrency(order.totals.grandTotal)}</Text>
-                  {NEXT_STATUS[order.status] ? <Pressable onPress={() => updateOrderStatus(order.id, NEXT_STATUS[order.status])} style={[styles.primarySmall, { backgroundColor: colors.primary }]}><Text style={styles.whiteButtonText}>Mark {NEXT_STATUS[order.status]}</Text><Ionicons name='arrow-forward' size={15} color='#FFFFFF' /></Pressable> : <Text style={[styles.completeText, { color: colors.success }]}>Completed</Text>}
+                  {NEXT_STATUS[order.status] ? <ScalePressable onPress={() => updateOrderStatus(order.id, NEXT_STATUS[order.status])} style={[styles.primarySmall, { backgroundColor: colors.primary }]}><Text style={styles.whiteButtonText}>Mark {NEXT_STATUS[order.status]}</Text><Ionicons name='arrow-forward' size={15} color='#FFFFFF' /></ScalePressable> : <Text style={[styles.completeText, { color: colors.success }]}>Completed</Text>}
                 </View>
               </View>
             ))}
-          </View>
+          </FadeSlideView>
         ) : null}
 
         {section === 'reservations' ? (
-          <View>
+          <FadeSlideView key='reservations'>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Reservations</Text>
             {!reservations.length ? <EmptyState icon='calendar-outline' title='No reservations' message='Guest reservation requests will appear here.' /> : reservations.map((item) => (
               <View key={item.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -101,33 +103,33 @@ export default function ManagerDashboardScreen() {
                 </View>
                 {item.status === 'Pending' ? (
                   <View style={styles.decisionRow}>
-                    <Pressable onPress={() => updateReservationStatus(item.id, 'Declined')} style={[styles.declineButton, { borderColor: colors.danger }]}><Text style={[styles.declineText, { color: colors.danger }]}>Decline</Text></Pressable>
-                    <Pressable onPress={() => updateReservationStatus(item.id, 'Accepted')} style={[styles.acceptButton, { backgroundColor: colors.success }]}><Ionicons name='checkmark' size={18} color='#FFFFFF' /><Text style={styles.whiteButtonText}>Accept</Text></Pressable>
+                    <ScalePressable onPress={() => updateReservationStatus(item.id, 'Declined')} style={[styles.declineButton, { borderColor: colors.danger }]}><Text style={[styles.declineText, { color: colors.danger }]}>Decline</Text></ScalePressable>
+                    <ScalePressable onPress={() => updateReservationStatus(item.id, 'Accepted')} style={[styles.acceptButton, { backgroundColor: colors.success }]}><Ionicons name='checkmark' size={18} color='#FFFFFF' /><Text style={styles.whiteButtonText}>Accept</Text></ScalePressable>
                   </View>
                 ) : null}
               </View>
             ))}
-          </View>
+          </FadeSlideView>
         ) : null}
 
         {section === 'menu' ? (
-          <View>
-            <View style={styles.menuHeading}><Text style={[styles.sectionTitle, { color: colors.text }]}>Menu Management</Text><Pressable onPress={() => setShowAddItem(true)} style={[styles.addButton, { backgroundColor: colors.primary }]}><Ionicons name='add' size={18} color='#FFFFFF' /><Text style={styles.whiteButtonText}>Add item</Text></Pressable></View>
+          <FadeSlideView key='menu'>
+            <View style={styles.menuHeading}><Text style={[styles.sectionTitle, { color: colors.text }]}>Menu Management</Text><ScalePressable onPress={() => setShowAddItem(true)} style={[styles.addButton, { backgroundColor: colors.primary }]}><Ionicons name='add' size={18} color='#FFFFFF' /><Text style={styles.whiteButtonText}>Add item</Text></ScalePressable></View>
             {menuItems.map((item) => (
               <View key={item.id} style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }, !item.isAvailable && styles.unavailable]}>
-                <View style={[styles.menuIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name={item.icon || 'restaurant-outline'} size={25} color={colors.primary} /></View>
+                <View style={[styles.menuIcon, { backgroundColor: colors.surfaceMuted }]}>{item.image ? <Image source={item.image} style={styles.menuImage} resizeMode='cover' /> : <Ionicons name={item.icon || 'restaurant-outline'} size={25} color={colors.primary} />}</View>
                 <View style={styles.menuDetails}>
                   <Text style={[styles.menuName, { color: colors.text }]}>{item.name}</Text>
                   <Text style={[styles.meta, { color: colors.secondaryText }]}>{item.category} · {formatCurrency(item.price)}</Text>
                   <View style={styles.priceRow}>
                     <TextInput value={priceDrafts[item.id] ?? ''} onChangeText={(value) => setPriceDrafts((current) => ({ ...current, [item.id]: value }))} placeholder='New price' placeholderTextColor={colors.secondaryText} keyboardType='numeric' style={[styles.priceInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} />
-                    <Pressable onPress={() => savePrice(item)} style={[styles.savePrice, { backgroundColor: colors.surfaceMuted }]}><Text style={[styles.savePriceText, { color: colors.primary }]}>Save</Text></Pressable>
+                    <ScalePressable onPress={() => savePrice(item)} style={[styles.savePrice, { backgroundColor: colors.surfaceMuted }]}><Text style={[styles.savePriceText, { color: colors.primary }]}>Save</Text></ScalePressable>
                   </View>
                 </View>
                 <Pressable accessibilityLabel={'Toggle availability for ' + item.name} onPress={() => toggleMenuAvailability(item.id)} style={[styles.toggle, { backgroundColor: item.isAvailable ? colors.success : colors.border }]}><View style={[styles.toggleKnob, item.isAvailable && styles.toggleKnobOn]} /></Pressable>
               </View>
             ))}
-          </View>
+          </FadeSlideView>
         ) : null}
       </ScrollView>
 
@@ -142,7 +144,7 @@ export default function ManagerDashboardScreen() {
             <View style={styles.categoryRow}>
               {['Starters', 'Mains', 'Desserts', 'Drinks'].map((category) => <Pressable key={category} onPress={() => setNewItem((current) => ({ ...current, category }))} style={[styles.categoryButton, { borderColor: newItem.category === category ? colors.primary : colors.border, backgroundColor: newItem.category === category ? colors.surfaceMuted : colors.surface }]}><Text style={{ color: newItem.category === category ? colors.primary : colors.secondaryText, fontSize: 11, fontWeight: '800' }}>{category}</Text></Pressable>)}
             </View>
-            <Pressable onPress={saveNewItem} style={[styles.modalSave, { backgroundColor: colors.primary }]}><Text style={styles.whiteButtonText}>Add to menu</Text></Pressable>
+            <ScalePressable onPress={saveNewItem} style={[styles.modalSave, { backgroundColor: colors.primary }]}><Text style={styles.whiteButtonText}>Add to menu</Text></ScalePressable>
           </View>
         </View>
       </Modal>
@@ -150,8 +152,8 @@ export default function ManagerDashboardScreen() {
   );
 }
 
-function StatCard({ label, value, icon, colors }) {
-  return <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name={icon} size={20} color={colors.primary} /><Text style={[styles.statValue, { color: colors.text }]}>{value}</Text><Text numberOfLines={2} style={[styles.statLabel, { color: colors.secondaryText }]}>{label}</Text></View>;
+function StatCard({ delay, label, value, icon, colors }) {
+  return <FadeSlideView delay={delay} style={styles.statSlot}><View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}><Ionicons name={icon} size={20} color={colors.primary} /><Text style={[styles.statValue, { color: colors.text }]}>{value}</Text><Text numberOfLines={2} style={[styles.statLabel, { color: colors.secondaryText }]}>{label}</Text></View></FadeSlideView>;
 }
 
 function Info({ icon, text, colors }) {
@@ -166,7 +168,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
   managerIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   statsRow: { flexDirection: 'row', gap: 8, marginTop: 17 },
-  statCard: { flex: 1, minHeight: 108, borderWidth: 1, borderRadius: 17, padding: 11 },
+  statSlot: { flex: 1 },
+  statCard: { minHeight: 108, borderWidth: 1, borderRadius: 18, padding: 11, elevation: 2, shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   statValue: { fontSize: 23, fontWeight: '900', marginTop: 7 },
   statLabel: { fontSize: 10, lineHeight: 13, marginTop: 2 },
   tabs: { paddingVertical: 18 },
@@ -197,7 +200,8 @@ const styles = StyleSheet.create({
   addButton: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 11, paddingHorizontal: 11, paddingVertical: 9 },
   menuCard: { borderWidth: 1, borderRadius: 17, padding: 11, marginBottom: 9, flexDirection: 'row', alignItems: 'center' },
   unavailable: { opacity: 0.62 },
-  menuIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  menuIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 10, overflow: 'hidden' },
+  menuImage: { width: '100%', height: '100%' },
   menuDetails: { flex: 1 },
   menuName: { fontSize: 13, fontWeight: '900' },
   priceRow: { flexDirection: 'row', gap: 6, marginTop: 8 },

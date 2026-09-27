@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_NAME, BRAND_TAGLINE } from '../constants/brand';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useForm } from '../hooks/useForm';
@@ -44,7 +46,19 @@ export default function LoginScreen() {
   const [mode, setMode] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [heroProgress] = useState(() => new Animated.Value(0));
   const isSignup = mode === 'signup';
+
+  useEffect(() => {
+    heroProgress.setValue(0);
+    Animated.spring(heroProgress, {
+      toValue: 1,
+      damping: 14,
+      stiffness: 115,
+      mass: 0.8,
+      useNativeDriver: true,
+    }).start();
+  }, [heroProgress, mode]);
 
   const submit = async (values) => {
     setIsSubmitting(true);
@@ -69,26 +83,37 @@ export default function LoginScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps='handled'>
-          <View style={styles.hero}>
-            <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-              <Ionicons name='restaurant' size={34} color='#FFFFFF' />
+          <Animated.View
+            style={[
+              styles.hero,
+              {
+                opacity: heroProgress,
+                transform: [
+                  { translateY: heroProgress.interpolate({ inputRange: [0, 1], outputRange: [-18, 0] }) },
+                  { scale: heroProgress.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] }) },
+                ],
+              },
+            ]}
+          >
+            <View style={[styles.logo, { backgroundColor: colors.surface, borderColor: colors.accent, shadowColor: colors.shadow }]}>
+              <Image source={require('../../assets/hiba-mark.png')} style={styles.logoImage} resizeMode='contain' />
             </View>
-            <Text style={[styles.brand, { color: colors.text }]}>Saffron Table</Text>
-            <Text style={[styles.tagline, { color: colors.secondaryText }]}>Memorable flavours, one tap away.</Text>
-          </View>
-          <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+            <Text style={[styles.brand, { color: colors.text }]}>{BRAND_NAME}</Text>
+            <Text style={[styles.tagline, { color: colors.secondaryText }]}>{BRAND_TAGLINE}</Text>
+          </Animated.View>
+          <FadeSlideView delay={100} distance={22} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
             <View style={[styles.segment, { backgroundColor: colors.surfaceMuted }]}>
               {['login', 'signup'].map((item) => (
-                <Pressable key={item} disabled={isSubmitting} onPress={() => changeMode(item)} style={[styles.segmentButton, mode === item && { backgroundColor: colors.primary }]}>
+                <ScalePressable key={item} disabled={isSubmitting} onPress={() => changeMode(item)} style={[styles.segmentButton, mode === item && { backgroundColor: colors.primary }]}>
                   <Text style={[styles.segmentText, { color: mode === item ? '#FFFFFF' : colors.secondaryText }]}>
                     {item === 'login' ? 'Login' : 'Sign Up'}
                   </Text>
-                </Pressable>
+                </ScalePressable>
               ))}
             </View>
             <Text style={[styles.heading, { color: colors.text }]}>{isSignup ? 'Create your account' : 'Welcome back'}</Text>
             <Text style={[styles.subheading, { color: colors.secondaryText }]}>
-              {isSignup ? 'Join as a diner or restaurant manager.' : 'Sign in to continue your restaurant experience.'}
+              {isSignup ? 'Join Hiba Cafe as a guest or restaurant manager.' : 'Sign in to continue your Hiba Cafe experience.'}
             </Text>
             {isSignup ? (
               <FormInput label='Full name' icon='person-outline' colors={colors} error={form.errors.name} placeholder='Your name' autoCapitalize='words' value={form.values.name} onChangeText={(value) => form.handleChange('name', value)} />
@@ -117,23 +142,23 @@ export default function LoginScreen() {
                   {[['customer', 'Customer', 'person-outline'], ['manager', 'Manager', 'briefcase-outline']].map(([value, label, icon]) => {
                     const selected = form.values.role === value;
                     return (
-                      <Pressable key={value} onPress={() => form.handleChange('role', value)} style={[styles.roleButton, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.surfaceMuted : colors.background }]}>
+                      <ScalePressable key={value} onPress={() => form.handleChange('role', value)} style={[styles.roleButton, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.surfaceMuted : colors.background }]}>
                         <Ionicons name={icon} size={20} color={selected ? colors.primary : colors.secondaryText} />
                         <Text style={{ color: selected ? colors.primary : colors.text, fontWeight: '800' }}>{label}</Text>
-                      </Pressable>
+                      </ScalePressable>
                     );
                   })}
                 </View>
               </>
             ) : null}
-            <Pressable disabled={isSubmitting} onPress={form.handleSubmit} style={({ pressed }) => [styles.submit, { backgroundColor: colors.primary }, (pressed || isSubmitting) && styles.submitPressed]}>
+            <ScalePressable disabled={isSubmitting} onPress={form.handleSubmit} style={[styles.submit, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
               {isSubmitting ? <ActivityIndicator color='#FFFFFF' /> : (
                 <>
                   <Text style={styles.submitText}>{isSignup ? 'Create Account' : 'Login'}</Text>
                   <Ionicons name='arrow-forward' size={20} color='#FFFFFF' />
                 </>
               )}
-            </Pressable>
+            </ScalePressable>
             {!isSignup ? (
               <View style={[styles.demoBox, { backgroundColor: colors.surfaceMuted }]}>
                 <Text style={[styles.demoTitle, { color: colors.text }]}>Demo accounts</Text>
@@ -141,7 +166,7 @@ export default function LoginScreen() {
                 <Text style={[styles.demoText, { color: colors.secondaryText }]}>Manager: manager@example.com / Manager123</Text>
               </View>
             ) : null}
-          </View>
+          </FadeSlideView>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -153,10 +178,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20, paddingBottom: 36 },
   hero: { alignItems: 'center', marginBottom: 24 },
-  logo: { width: 68, height: 68, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
-  brand: { fontSize: 30, fontWeight: '900', letterSpacing: -0.8 },
-  tagline: { fontSize: 14, marginTop: 4 },
-  card: { borderRadius: 24, padding: 20, elevation: 5, shadowOpacity: 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
+  logo: { width: 82, height: 82, borderRadius: 26, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 13, elevation: 7, shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 7 } },
+  logoImage: { width: 66, height: 66 },
+  brand: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.7, textAlign: 'center' },
+  tagline: { fontSize: 14, marginTop: 5, textAlign: 'center' },
+  card: { borderRadius: 26, borderWidth: 1, padding: 20, elevation: 5, shadowOpacity: 0.11, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
   segment: { flexDirection: 'row', padding: 4, borderRadius: 14, marginBottom: 22 },
   segmentButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 11 },
   segmentText: { fontSize: 14, fontWeight: '800' },
@@ -169,8 +195,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 12, fontWeight: '600', marginTop: 5 },
   roleRow: { flexDirection: 'row', gap: 10, marginBottom: 15 },
   roleButton: { flex: 1, minHeight: 49, borderWidth: 1.5, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  submit: { minHeight: 52, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 5 },
-  submitPressed: { opacity: 0.72 },
+  submit: { minHeight: 54, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 5, elevation: 4, shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   submitText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   demoBox: { borderRadius: 14, padding: 13, marginTop: 16 },
   demoTitle: { fontSize: 13, fontWeight: '900', marginBottom: 4 },

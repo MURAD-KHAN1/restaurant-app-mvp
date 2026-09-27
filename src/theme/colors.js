@@ -1,21 +1,21 @@
 export const lightColors = {
-  primary: '#E4572E', primaryDark: '#C2411F', accent: '#F4A261',
-  background: '#FFF8F3', surface: '#FFFFFF', surfaceMuted: '#FFF0E8',
-  text: '#1F2937', secondaryText: '#6B7280', border: '#E8DDD6',
-  success: '#16A34A', danger: '#DC2626', warning: '#D97706',
-  tabBar: '#FFFFFF', shadow: '#402012',
+  primary: '#8A2635', primaryDark: '#631B28', accent: '#D1A34F',
+  background: '#FBF7F1', surface: '#FFFEFC', surfaceMuted: '#F5EADF',
+  text: '#2B1D21', secondaryText: '#75676B', border: '#E7D9CE',
+  success: '#2F7D5B', danger: '#B53B49', warning: '#B57920',
+  tabBar: '#FFFEFC', shadow: '#3A151D',
 };
 
 export const darkColors = {
-  primary: '#FB6A3B', primaryDark: '#E4572E', accent: '#F4A261',
-  background: '#111827', surface: '#1F2937', surfaceMuted: '#2B374A',
-  text: '#F9FAFB', secondaryText: '#D1D5DB', border: '#374151',
-  success: '#4ADE80', danger: '#F87171', warning: '#FBBF24',
-  tabBar: '#18212F', shadow: '#000000',
+  primary: '#D85D6B', primaryDark: '#B63C4D', accent: '#E2B864',
+  background: '#151012', surface: '#21191C', surfaceMuted: '#302329',
+  text: '#FFF9F3', secondaryText: '#CDBEC2', border: '#49363D',
+  success: '#69B98E', danger: '#FF7B89', warning: '#F0C16B',
+  tabBar: '#1C1518', shadow: '#000000',
 };
 
 export const categoryColors = {
-  Starters: '#F59E0B', Mains: '#E4572E', Desserts: '#DB2777', Drinks: '#0891B2',
+  Starters: '#B57920', Mains: '#8A2635', Desserts: '#A94D6B', Drinks: '#287A78',
 };
 
 export const formatCurrency = (amount) =>

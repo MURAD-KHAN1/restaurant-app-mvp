@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
+import { FadeSlideView } from '../components/Motion';
 import OrderStatusStep from '../components/OrderStatusStep';
+import { BRAND_SHORT_NAME } from '../constants/brand';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrdersContext';
 import { useTheme } from '../context/ThemeContext';
@@ -25,12 +27,11 @@ export default function OrdersScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { orders } = useOrders();
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const myOrders = useMemo(() => orders.filter((order) => order.customerEmail === user.email), [orders, user.email]);
   const hasActiveOrders = useMemo(() => myOrders.some((order) => order.status !== 'Served'), [myOrders]);
 
   useEffect(() => {
-    setNow(Date.now());
     if (!hasActiveOrders) return undefined;
     const intervalId = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(intervalId);
@@ -38,15 +39,16 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeSlideView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heading}>
           <Text style={[styles.title, { color: colors.text }]}>Your orders</Text>
-          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>Live demo tracking: Preparing at 10s, Ready at 20s, Served at 30s.</Text>
+          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{BRAND_SHORT_NAME} live tracking: Preparing at 10s, Ready at 20s, Served at 30s.</Text>
         </View>
-        {!myOrders.length ? <EmptyState icon='receipt-outline' title='No orders yet' message='Place an order from your cart and track it here in real time.' /> : myOrders.map((order) => {
+        {!myOrders.length ? <EmptyState icon='receipt-outline' title='No orders yet' message='Place an order from your cart and track it here in real time.' /> : myOrders.map((order, index) => {
           const activeIndex = STEPS.findIndex((step) => step.label === order.status);
           return (
-            <View key={order.id} style={[styles.orderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <FadeSlideView key={order.id} delay={Math.min(index, 6) * 70} style={[styles.orderCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
               <View style={styles.orderTop}>
                 <View><Text style={[styles.orderId, { color: colors.text }]}>{order.id}</Text><Text style={[styles.orderTime, { color: colors.secondaryText }]}>Elapsed {formatElapsed(order.timestamp, now)}</Text></View>
                 <View style={[styles.statusBadge, { backgroundColor: colors.surfaceMuted }]}><View style={[styles.statusDot, { backgroundColor: order.status === 'Served' ? colors.success : colors.primary }]} /><Text style={[styles.statusText, { color: colors.text }]}>{order.status}</Text></View>
@@ -59,21 +61,23 @@ export default function OrdersScreen() {
               <View style={styles.tracker}>
                 {STEPS.map((step, index) => <OrderStatusStep key={step.label} label={step.label} icon={step.icon} isComplete={index < activeIndex} isCurrent={index === activeIndex} isLast={index === STEPS.length - 1} />)}
               </View>
-            </View>
+            </FadeSlideView>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </FadeSlideView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
   heading: { marginBottom: 18 },
   title: { fontSize: 27, fontWeight: '900', letterSpacing: -0.5 },
   subtitle: { fontSize: 13, lineHeight: 19, marginTop: 4 },
-  orderCard: { borderWidth: 1, borderRadius: 22, padding: 16, marginBottom: 15 },
+  orderCard: { borderWidth: 1, borderRadius: 22, padding: 16, marginBottom: 15, elevation: 2, shadowOpacity: 0.07, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
   orderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   orderId: { fontSize: 17, fontWeight: '900' },
   orderTime: { fontSize: 12, marginTop: 4 },

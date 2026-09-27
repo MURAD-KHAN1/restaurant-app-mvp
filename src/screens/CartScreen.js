@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CartItemRow from '../components/CartItemRow';
 import EmptyState from '../components/EmptyState';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { formatCurrency } from '../theme/colors';
@@ -47,7 +48,8 @@ export default function CartScreen({ navigation }) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
+      <FadeSlideView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
         <View style={styles.header}>
           <View><Text style={[styles.title, { color: colors.text }]}>Your cart</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>{items.length} unique dishes</Text></View>
           <Pressable onPress={() => Alert.alert('Clear cart?', 'Remove every item from your cart?', [{ text: 'Keep items', style: 'cancel' }, { text: 'Clear', style: 'destructive', onPress: clearCart }])}>
@@ -67,7 +69,7 @@ export default function CartScreen({ navigation }) {
           ) : (
             <View style={styles.promoRow}>
               <TextInput value={promoInput} onChangeText={(value) => { setPromoInput(value.toUpperCase()); setPromoMessage(''); }} placeholder='WELCOME10 or FEAST20' placeholderTextColor={colors.secondaryText} autoCapitalize='characters' style={[styles.promoInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} />
-              <Pressable onPress={submitPromo} style={[styles.applyButton, { backgroundColor: colors.primary }]}><Text style={styles.applyText}>Apply</Text></Pressable>
+              <ScalePressable onPress={submitPromo} style={[styles.applyButton, { backgroundColor: colors.primary }]}><Text style={styles.applyText}>Apply</Text></ScalePressable>
             </View>
           )}
           {promoMessage ? <Text style={[styles.feedback, { color: promoMessage.startsWith('Invalid') ? colors.danger : colors.success }]}>{promoMessage}</Text> : null}
@@ -82,11 +84,12 @@ export default function CartScreen({ navigation }) {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.totalRow}><Text style={[styles.totalLabel, { color: colors.text }]}>Grand total</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(totals.grandTotal)}</Text></View>
         </View>
-        <Pressable onPress={checkout} style={({ pressed }) => [styles.checkout, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+        <ScalePressable onPress={checkout} style={[styles.checkout, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
           <Text style={styles.checkoutText}>Review order</Text>
           <View style={styles.checkoutPrice}><Text style={styles.checkoutText}>{formatCurrency(totals.grandTotal)}</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></View>
-        </Pressable>
-      </ScrollView>
+        </ScalePressable>
+        </ScrollView>
+      </FadeSlideView>
     </SafeAreaView>
   );
 }
@@ -102,6 +105,7 @@ function SummaryRow({ label, value, colors, isDiscount = false }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
   titleBlock: { paddingHorizontal: 18, paddingTop: 18 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
@@ -127,8 +131,7 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: 17, fontWeight: '900' },
   totalValue: { fontSize: 20, fontWeight: '900' },
-  checkout: { minHeight: 56, borderRadius: 17, paddingHorizontal: 18, marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  checkout: { minHeight: 58, borderRadius: 18, paddingHorizontal: 18, marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 4, shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
   checkoutPrice: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   checkoutText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
-  pressed: { opacity: 0.78 },
 });

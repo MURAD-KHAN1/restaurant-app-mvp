@@ -1,22 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { FadeSlideView, ScalePressable } from './Motion';
 
 export default function EmptyState({ icon = 'restaurant-outline', title, message, actionLabel, onAction }) {
   const { colors } = useTheme();
   return (
-    <View style={styles.container}>
+    <FadeSlideView style={styles.container}>
       <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
         <Ionicons name={icon} size={38} color={colors.primary} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[styles.message, { color: colors.secondaryText }]}>{message}</Text>
       {actionLabel ? (
-        <Pressable onPress={onAction} style={({ pressed }) => [styles.button, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+        <ScalePressable onPress={onAction} style={[styles.button, { backgroundColor: colors.primary }]}>
           <Text style={styles.buttonText}>{actionLabel}</Text>
-        </Pressable>
+        </ScalePressable>
       ) : null}
-    </View>
+    </FadeSlideView>
   );
 }
 
@@ -27,5 +28,4 @@ const styles = StyleSheet.create({
   message: { marginTop: 7, fontSize: 15, lineHeight: 22, textAlign: 'center' },
   button: { marginTop: 20, borderRadius: 14, paddingHorizontal: 22, paddingVertical: 12 },
   buttonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
-  pressed: { opacity: 0.8 },
 });

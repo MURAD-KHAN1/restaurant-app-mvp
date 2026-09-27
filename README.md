@@ -1,4 +1,4 @@
-# Saffron Table — Restaurant App MVP
+# Hiba Cafe & Restaurant — Restaurant App MVP
 
 ## 🎥 Demo Video
 
@@ -47,7 +47,7 @@
 
 ## About the Project
 
-Saffron Table is a frontend-only Restaurant App developed using React Native and Expo.
+Hiba Cafe & Restaurant is a frontend-only Restaurant App developed using React Native and Expo.
 
 The application provides separate experiences for Customers and Restaurant Managers.
 
@@ -58,9 +58,9 @@ There is no backend, Firebase, external API, Redux, Zustand, or real payment gat
 ---
 
 ## Main Features
-# Saffron Table — Restaurant App MVP
+# Hiba Cafe & Restaurant — Restaurant App MVP
 
-Saffron Table is a frontend-only restaurant mobile application built with **React Native and Expo**.
+Hiba Cafe & Restaurant is a frontend-only restaurant mobile application built with **React Native and Expo**.
 
 The app provides separate interfaces for **Customers** and **Restaurant Managers**. It uses mock/local data, React Hooks, Context API, reducers, React Navigation, and AsyncStorage.
 

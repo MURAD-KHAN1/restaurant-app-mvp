@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_NAME } from '../constants/brand';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrdersContext';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -16,7 +18,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+      <FadeSlideView style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
         <View style={[styles.profileCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}><Text style={styles.initial}>{user.name.charAt(0).toUpperCase()}</Text></View>
@@ -32,12 +34,12 @@ export default function ProfileScreen() {
           <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: colors.border, true: colors.primary }} thumbColor='#FFFFFF' />
         </View>
 
-        <Pressable onPress={() => Alert.alert('Log out?', 'You can sign back in with a demo account.', [{ text: 'Stay', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: logout }])} style={[styles.logout, { borderColor: colors.danger }]}>
+        <ScalePressable onPress={() => Alert.alert('Log out?', 'You can sign back in with a demo account.', [{ text: 'Stay', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: logout }])} style={[styles.logout, { borderColor: colors.danger }]}>
           <Ionicons name='log-out-outline' size={21} color={colors.danger} />
           <Text style={[styles.logoutText, { color: colors.danger }]}>Log out</Text>
-        </Pressable>
-        <Text style={[styles.footer, { color: colors.secondaryText }]}>Saffron Table MVP · Local demo data only</Text>
-      </View>
+        </ScalePressable>
+        <Text style={[styles.footer, { color: colors.secondaryText }]}>{BRAND_NAME} · Local demo data only</Text>
+      </FadeSlideView>
     </SafeAreaView>
   );
 }

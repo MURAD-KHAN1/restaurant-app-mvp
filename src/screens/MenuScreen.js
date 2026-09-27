@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CategoryChip from '../components/CategoryChip';
 import EmptyState from '../components/EmptyState';
 import MenuItemCard from '../components/MenuItemCard';
+import { FadeSlideView, ScalePressable } from '../components/Motion';
+import { BRAND_NAME } from '../constants/brand';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -27,9 +29,10 @@ export default function MenuScreen({ navigation }) {
   const previousQueryRef = useRef('');
   const refreshTimerRef = useRef(null);
   // Changing a ref does not cause a re-render, while changing state does.
-  renderCount.current += 1;
+  useEffect(() => {
+    renderCount.current += 1;
+  });
 
-  const [menuItems, setMenuItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -45,15 +48,11 @@ export default function MenuScreen({ navigation }) {
 
   useEffect(() => {
     sharedMenuRef.current = sharedMenuItems;
-    if (!isLoading && !error) setMenuItems(sharedMenuItems);
-  }, [error, isLoading, sharedMenuItems]);
+  }, [sharedMenuItems]);
 
   useEffect(() => {
     let isActive = true;
     let timerId;
-    setIsLoading(true);
-    setError(null);
-
     const menuPromise = new Promise((resolve, reject) => {
       timerId = setTimeout(() => {
         const latestMenu = sharedMenuRef.current;
@@ -63,9 +62,6 @@ export default function MenuScreen({ navigation }) {
     });
 
     menuPromise
-      .then((items) => {
-        if (isActive) setMenuItems(items);
-      })
       .catch((loadError) => {
         if (isActive) setError(loadError.message || 'Menu could not be loaded. Please try again.');
       })
@@ -96,7 +92,7 @@ export default function MenuScreen({ navigation }) {
   // Filtered and sorted menu items are derived data, so useMemo is preferable to separate state.
   const visibleItems = useMemo(() => {
     const query = debouncedSearch.toLowerCase();
-    const result = menuItems.filter((item) => {
+    const result = sharedMenuItems.filter((item) => {
       const matchesCategory = category === 'All' || item.category === category;
       const matchesSearch = !query || item.name.toLowerCase().includes(query) || item.description.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
@@ -106,14 +102,14 @@ export default function MenuScreen({ navigation }) {
     if (sort === 'Price High to Low') return [...result].sort((a, b) => b.price - a.price);
     if (sort === 'Name A to Z') return [...result].sort((a, b) => a.name.localeCompare(b.name));
     return [...result].sort((a, b) => Number(b.isSpecial) - Number(a.isSpecial));
-  }, [category, debouncedSearch, favourites, menuItems, sort]);
+  }, [category, debouncedSearch, favourites, sharedMenuItems, sort]);
 
   useLayoutEffect(() => {
     const title = 'Menu (' + visibleItems.length + ')';
     navigation.setOptions({ title, tabBarLabel: title });
   }, [navigation, visibleItems.length]);
 
-  const specials = useMemo(() => menuItems.filter((item) => item.isSpecial && item.isAvailable), [menuItems]);
+  const specials = useMemo(() => sharedMenuItems.filter((item) => item.isSpecial && item.isAvailable), [sharedMenuItems]);
   const firstName = user?.name?.split(' ')[0] || 'Guest';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -122,8 +118,8 @@ export default function MenuScreen({ navigation }) {
     setFavourites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }, []);
   const handleAdd = useCallback((item) => addItem(item), [addItem]);
-  const renderMenuItem = useCallback(({ item }) => (
-    <MenuItemCard item={item} onAdd={handleAdd} onToggleFavourite={toggleFavourite} isFavourite={favourites.includes(item.id)} />
+  const renderMenuItem = useCallback(({ item, index }) => (
+    <MenuItemCard item={item} index={index} onAdd={handleAdd} onToggleFavourite={toggleFavourite} isFavourite={favourites.includes(item.id)} />
   ), [favourites, handleAdd, toggleFavourite]);
   const selectSpecial = (item) => {
     setCategory('All');
@@ -138,9 +134,13 @@ export default function MenuScreen({ navigation }) {
     setRefreshing(true);
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     refreshTimerRef.current = setTimeout(() => {
-      setMenuItems(sharedMenuRef.current);
       setRefreshing(false);
     }, 700);
+  };
+  const retryLoad = () => {
+    setIsLoading(true);
+    setError(null);
+    setLoadAttempt((current) => current + 1);
   };
 
   if (isLoading) {
@@ -166,30 +166,31 @@ export default function MenuScreen({ navigation }) {
           title='Unable to load menu'
           message={error}
           actionLabel='Retry'
-          onAction={() => setLoadAttempt((current) => current + 1)}
+          onAction={retryLoad}
         />
       </SafeAreaView>
     );
   }
 
   const header = (
-    <View>
+    <FadeSlideView>
       <View style={[styles.hero, { backgroundColor: colors.primary }]}>
+        <View pointerEvents='none' style={[styles.heroGlow, { backgroundColor: colors.accent }]} />
         <View style={styles.heroTop}>
           <View style={styles.brandRow}>
             <View style={styles.restaurantMark}><Ionicons name='restaurant' size={22} color={colors.primary} /></View>
             <View>
               <Text style={styles.greeting}>{greeting}, {firstName}</Text>
-              <Text style={styles.eyebrow}>SAFFRON TABLE</Text>
+              <Text style={styles.eyebrow}>{BRAND_NAME.toUpperCase()}</Text>
             </View>
           </View>
-          <Pressable accessibilityLabel='Open cart' onPress={() => navigation.navigate('Cart')} style={styles.cartShortcut}>
+          <ScalePressable accessibilityLabel='Open cart' onPress={() => navigation.navigate('Cart')} style={styles.cartShortcut}>
             <Ionicons name='cart-outline' size={24} color='#FFFFFF' />
             {itemCount ? <View style={styles.cartBadge}><Text style={[styles.cartBadgeText, { color: colors.primary }]}>{itemCount > 99 ? '99+' : itemCount}</Text></View> : null}
-          </Pressable>
+          </ScalePressable>
         </View>
         <Text style={styles.heroTitle}>What are you craving today?</Text>
-        <Text style={styles.heroText}>Freshly prepared favourites, ready for your table.</Text>
+        <Text style={styles.heroText}>Thoughtful flavours and cafe favourites, prepared fresh for you.</Text>
         <View style={[styles.searchShell, { backgroundColor: colors.surface }]}>
           <Pressable accessibilityLabel='Focus menu search' onPress={() => searchInputRef.current?.focus()} hitSlop={8}>
             <Ionicons name='search' size={21} color={colors.primary} />
@@ -241,7 +242,7 @@ export default function MenuScreen({ navigation }) {
       <View style={styles.sectionHeader}>
         <View>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Our menu</Text>
-          <Text style={[styles.resultText, { color: colors.secondaryText }]}>{visibleItems.length} dishes · render {renderCount.current}</Text>
+          <Text style={[styles.resultText, { color: colors.secondaryText }]}>{visibleItems.length} dishes ready to explore</Text>
         </View>
         <Ionicons name='options-outline' size={22} color={colors.primary} />
       </View>
@@ -255,7 +256,7 @@ export default function MenuScreen({ navigation }) {
           );
         })}
       </ScrollView>
-    </View>
+    </FadeSlideView>
   );
 
   return (
@@ -278,9 +279,9 @@ export default function MenuScreen({ navigation }) {
         windowSize={7}
       />
       {showBackToTop ? (
-        <Pressable accessibilityLabel='Back to top' onPress={() => listRef.current?.scrollToOffset({ offset: 0 })} style={[styles.topButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
+        <ScalePressable accessibilityLabel='Back to top' onPress={() => listRef.current?.scrollToOffset({ offset: 0 })} style={[styles.topButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
           <Ionicons name='arrow-up' size={22} color='#FFFFFF' />
-        </Pressable>
+        </ScalePressable>
       ) : null}
     </SafeAreaView>
   );
@@ -288,9 +289,8 @@ export default function MenuScreen({ navigation }) {
 
 function SpecialTile({ item, colors, onPress }) {
   const [imageFailed, setImageFailed] = useState(false);
-  useEffect(() => setImageFailed(false), [item.image]);
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.specialCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }, pressed && styles.specialPressed]}>
+    <ScalePressable onPress={onPress} style={[styles.specialCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
       <View style={[styles.specialImageWrap, { backgroundColor: colors.surfaceMuted }]}>
         {item.image && !imageFailed ? (
           <Image source={item.image} style={styles.specialImage} resizeMode='cover' resizeMethod='resize' fadeDuration={120} onError={() => setImageFailed(true)} />
@@ -306,7 +306,7 @@ function SpecialTile({ item, colors, onPress }) {
         </View>
         <Ionicons name='chevron-forward' size={18} color={colors.secondaryText} />
       </View>
-    </Pressable>
+    </ScalePressable>
   );
 }
 
@@ -319,11 +319,12 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 24 },
   emptyContent: { flexGrow: 1 },
   hero: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  heroGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90, top: -104, right: -48, opacity: 0.18 },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   restaurantMark: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
   greeting: { color: '#FFE9DF', fontSize: 12, fontWeight: '700' },
-  eyebrow: { color: '#FFFFFF', fontSize: 12, fontWeight: '900', letterSpacing: 1.4, marginTop: 2 },
+  eyebrow: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 1.05, marginTop: 2 },
   cartShortcut: { width: 45, height: 45, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.17)' },
   cartBadge: { position: 'absolute', top: -5, right: -5, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
   cartBadgeText: { fontSize: 9, fontWeight: '900' },
@@ -345,7 +346,6 @@ const styles = StyleSheet.create({
   specialCopy: { flex: 1 },
   specialName: { fontSize: 13, fontWeight: '900' },
   specialPrice: { fontSize: 12, fontWeight: '900', marginTop: 3 },
-  specialPressed: { opacity: 0.8, transform: [{ scale: 0.99 }] },
   recents: { paddingHorizontal: 16, paddingTop: 15 },
   metaLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 7 },
   recentChip: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7, marginRight: 8, flexDirection: 'row', alignItems: 'center', gap: 5 },

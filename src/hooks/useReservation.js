@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRestaurant } from '../context/RestaurantContext';
 
@@ -24,11 +24,10 @@ function parseLocalDate(dateString) {
 export function useReservation() {
   const { user } = useAuth();
   const { tables, reservations, addReservation, cancelReservation: cancelSavedReservation } = useRestaurant();
-  const defaultDate = new Date(Date.now() + 24 * HOUR_MS);
-  const [selectedDate, setSelectedDate] = useState(localDateString(defaultDate));
+  const [selectedDate, setSelectedDate] = useState(() => localDateString(new Date(Date.now() + 24 * HOUR_MS)));
   const [selectedTime, setSelectedTime] = useState('19:00');
   const [partySize, setPartySize] = useState(2);
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedTablePreference, setSelectedTable] = useState(null);
   const [contactDetails, setContactDetails] = useState({ name: user?.name ?? '', phone: '' });
 
   const getAvailableTables = useCallback((time = selectedTime, date = selectedDate, size = partySize) => {
@@ -40,10 +39,10 @@ export function useReservation() {
   }, [partySize, reservations, selectedDate, selectedTime, tables]);
 
   const availability = useMemo(() => getAvailableTables(), [getAvailableTables]);
-
-  useEffect(() => {
-    setSelectedTable((current) => availability.some((table) => table.id === current?.id) ? current : availability[0] ?? null);
-  }, [availability]);
+  const selectedTable = useMemo(
+    () => availability.find((table) => table.id === selectedTablePreference?.id) ?? availability[0] ?? null,
+    [availability, selectedTablePreference],
+  );
 
   const isSlotAvailable = useCallback((time) => getAvailableTables(time).length > 0, [getAvailableTables]);
 
