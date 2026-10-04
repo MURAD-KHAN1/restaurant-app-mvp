@@ -1,0 +1,507 @@
+{
+  "info": {
+    "name": "Restaurant API - Assignment 2 Question 4",
+    "description": "Prepared importable collection, not a record of a manual Postman export. Run requests in order. GET all captures menuItemId; POST captures createdMenuItemId. PUT and DELETE affect only that new demo item. No authentication for Q4.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "menuItemId",
+      "value": ""
+    },
+    {
+      "key": "createdMenuItemId",
+      "value": ""
+    },
+    {
+      "key": "missingMenuItemId",
+      "value": "000000000000000000000000"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET all menu - success screenshot",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "const items = pm.response.json();",
+              "pm.test(\"Menu array\", () => pm.expect(items).to.be.an(\"array\"));",
+              "if (items.length) pm.collectionVariables.set(\"menuItemId\", items[0]._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET category filter",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu?category=Mains"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Only Mains\", () => pm.expect(pm.response.json().every(item => item.category === \"Mains\")).to.be.true);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu?search=burger"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Burger name match\", () => pm.expect(pm.response.json().every(item => /burger/i.test(item.name))).to.be.true);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET uppercase search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu?search=BURGER"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET combined filters",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu?category=Mains&search=burger"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET one menu item",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/{{menuItemId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST menu item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Q4 Postman Demo Burger\",\n  \"description\": \"Temporary item for Q4 CRUD verification\",\n  \"category\": \"Mains\",\n  \"price\": 850,\n  \"available\": true,\n  \"isSpecial\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "if (pm.response.code === 201) pm.collectionVariables.set(\"createdMenuItemId\", pm.response.json()._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PUT menu item",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": 900,\n  \"isSpecial\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Price updated\", () => pm.expect(pm.response.json().price).to.equal(900));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PUT negative price - failure",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": -100\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DELETE menu item",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Deletion confirmed\", () => pm.expect(pm.response.json().message).to.equal(\"Menu item deleted successfully\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST missing name - failure",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"Mains\",\n  \"price\": 500\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST negative price - failure screenshot",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Invalid Dish\",\n  \"category\": \"Mains\",\n  \"price\": -100\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET wrong ID - failure",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/not-a-valid-id"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET nonexistent item - failure",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PUT wrong ID - failure",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu/not-a-valid-id",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": 900\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PUT nonexistent item - failure",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": 900\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DELETE wrong ID - failure",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/not-a-valid-id"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DELETE nonexistent item - failure",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
