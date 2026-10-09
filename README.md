@@ -1,14 +1,49 @@
 # 🍽️ Hiba Cafe & Restaurant
+# Hiba Cafe & Restaurant – Assignment 2
 
+## 🎥 Assignment 2 Demo Video
+[Watch Assignment 2 Demo Video](https://drive.google.com/file/d/1zO-BL2b3ubcpDxIhZYtlIYprmi4LnXmv/view?usp=drive_link)
+
+---
 ### Restaurant App MVP — React Native + Expo | Fall 2026
 
-Hiba Cafe & Restaurant is a frontend-only React Native restaurant application featuring customer ordering, reservations, live order tracking, menu browsing, cart management, dark/light themes, and a dedicated manager dashboard.
+Hiba Cafe & Restaurant is a React Native restaurant application with shared server authentication and menu data featuring customer ordering, reservations, live order tracking, menu browsing, cart management, dark/light themes, and a dedicated manager dashboard.
 
 ![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react&logoColor=white)
 ![Expo SDK 57](https://img.shields.io/badge/Expo_SDK-57-000020?logo=expo&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=111111)
-![Frontend Only](https://img.shields.io/badge/Architecture-Frontend_Only-8B5E3C)
+![Express + MongoDB](https://img.shields.io/badge/Architecture-Express_MongoDB-8B5E3C)
 ![Fall 2026](https://img.shields.io/badge/Academic_Term-Fall_2026-B8860B)
+
+## Assignment 2 Q7: Orders and Reservations
+
+Orders and reservations use the existing JWT/API client and MongoDB. Checkout sends item IDs and quantities; the server uses database prices, 5% service charge, 15% sales tax and the validated promo discount. Manager changes are shared across clients.
+
+- [Q7 implementation and verification](A2/Q7_ORDERS_RESERVATIONS.md)
+- [Q7 two-device video instructions (maximum 4 minutes)](A2/Q7_VIDEO_INSTRUCTIONS.md)
+- [Postman collection: Q4, Q5 and Q7](A2/restaurant-api.postman_collection.json)
+
+Q7 Demo Video: **[ADD REAL VIDEO LINK AFTER RECORDING]**
+
+The original app demo below is retained. A Q7 two-device recording and its real share link are still required.
+
+## Assignment 2 Q6: run app and server
+
+Use two terminals:
+
+```powershell
+# Terminal 1, from server/
+npm.cmd run dev
+# Terminal 2, from the project root
+npx.cmd expo start
+# For laptop web:
+npm.cmd run web
+```
+
+BASE_URL is defined once in src/api/client.js: http://192.168.18.124:5000/api (current Wi-Fi address). Physical Expo Go phones must use the laptop LAN IP and the same Wi-Fi. Update this file if the address changes; localhost on a phone points to that phone. The optional EXPO_PUBLIC_API_URL override supports other environments.
+
+Use the existing demo accounts below. Signup creates customers only. Menu, orders and reservations are now shared through MongoDB (Q7). Run npm.cmd run test:q6 for helper/integration checks. See [Q6 report](A2/Q6_APP_SERVER_CONNECTION.md) and [two-device screenshot steps](A2/Q6_SCREENSHOT_INSTRUCTIONS.md).
+
 
 ---
 
@@ -57,9 +92,9 @@ The repository contains screenshots for authentication, menu browsing, search, s
 
 ## 📖 About the Project
 
-Hiba Cafe & Restaurant is a frontend-only restaurant app MVP created for the Fall 2026 Mobile Application Development assignment. It provides separate Customer and Manager experiences while demonstrating reusable components, React Hooks, Context API, reducer-based state management, local persistence, navigation, themes, and performance optimization.
+Hiba Cafe & Restaurant is a restaurant app MVP created for the Fall 2026 Mobile Application Development assignment. It provides separate Customer and Manager experiences while demonstrating reusable components, React Hooks, Context API, reducer-based state management, local persistence, navigation, themes, and performance optimization.
 
-All application behavior uses local or mock data, so the project is straightforward to review and run in Expo without server configuration.
+Assignment 2 Q6 uses the Express/MongoDB backend for authentication and shared menu data. Q7 stores orders and reservations in MongoDB and tracks manager changes through the API.
 
 ## ✨ Key Features
 
@@ -115,11 +150,11 @@ These credentials come directly from `src/data/users.js`:
 | Context API | Shared authentication, theme, cart, order, reservation, and menu state |
 | React Hooks | Local state, effects, refs, context, reducers, memoization, and callbacks |
 | `useReducer` | Predictable action-based cart and order state transitions |
-| AsyncStorage | Local persistence for orders, reservations, and menu edits |
+| AsyncStorage | Session token/user; menu, orders and reservations persist in MongoDB |
 | Ionicons | Consistent interface iconography |
 | Local assets | Reliable bundled menu images without runtime downloads |
 
-No backend, Firebase, external database, or payment API is used. This is a frontend-only assignment.
+Express/MongoDB provides authentication, menu CRUD, orders and reservations.
 
 ## 📂 Project Structure
 
@@ -265,11 +300,11 @@ Memoization is used where it improves behavior; applying it indiscriminately wou
 
 AsyncStorage keeps selected application state available across app restarts:
 
-- Orders
-- Reservations
-- Manager menu edits, including price, availability, and locally added items
+- Authentication token and user/session
 
-These are the project's selected persistent state domains. Authentication, payments, and remote synchronization are not persisted through a server because the app is frontend-only.
+Menu items, orders, reservations and manager edits are stored in MongoDB and reloaded from the API.
+
+Authentication persists token/user locally; shared menu updates persist on the server. Payments are not integrated.
 
 ## 🏷️ Promo Codes
 
@@ -296,17 +331,17 @@ The summary also preserves the chosen order type, dine-in table or takeaway time
 
 ## 📍 Order Tracking
 
-Orders progress forward through the local status sequence:
+Managers advance orders through the server-validated status sequence:
 
 ```text
 Pending → Preparing → Ready → Served
 ```
 
-For the demo, an active order advances to Preparing after 10 seconds, Ready after 20 seconds, and Served after 30 seconds. The Manager dashboard can also move an order to its next valid status.
+The Manager dashboard changes the server status. The customer Orders screen fetches immediately and every 10 seconds while focused; its interval is cleaned up on blur/unmount. Orders never advance automatically. Only Pending orders can be cancelled.
 
 ## 📅 Table Reservation
 
-Customers can select a date, party size, phone number, and available time slot, then create or cancel a reservation. Time slots cover `12:00` through `22:00`, and the accepted phone format is `03XX-XXXXXXX`. Reservations are visible to the Manager for approval or decline and are saved locally with AsyncStorage.
+Customers can select a date, party size, phone number, and available time slot, then create or cancel a reservation. Time slots cover `12:00` through `22:00`, and the accepted phone format is `03XX-XXXXXXX`. Reservations are visible to the Manager for approval or decline and are saved in MongoDB. Active bookings cannot overlap for the same table/date/time; the server checks capacity and returns 409 for conflicts.
 
 ## 🧪 Cart Reducer Test Cases
 
