@@ -1,92 +1,40 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { initialMenuItems } from '../data/menu';
-import { initialReservations } from '../data/reservations';
-import { tables } from '../data/tables';
-
-const MENU_KEY = '@restaurant/menu';
-const RESERVATIONS_KEY = '@restaurant/reservations';
+import { apiRequest } from '../api/client';
+import { normalizeReservation, normalizeReservations, normalizeTables } from '../api/reservations';
+import { useApi } from '../hooks/useApi';
+import { useAuth } from './AuthContext';
 const RestaurantContext = createContext(undefined);
-
-function mergeSavedMenu(savedMenu) {
-  const savedItems = JSON.parse(savedMenu);
-  if (!Array.isArray(savedItems)) return initialMenuItems;
-  const savedIds = new Set(savedItems.map((item) => item.id));
-  const restored = savedItems.map((item) => {
-    const currentItem = initialMenuItems.find((candidate) => candidate.id === item.id);
-    if (!currentItem) return { ...item, image: null, icon: item.icon || 'restaurant-outline' };
-    return { ...currentItem, ...item, image: currentItem.image, icon: currentItem.icon };
-  });
-  return [...restored, ...initialMenuItems.filter((item) => !savedIds.has(item.id))];
-}
-
 export function RestaurantProvider({ children }) {
-  const [menuItems, setMenuItems] = useState(initialMenuItems);
-  const [reservations, setReservations] = useState(initialReservations);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    async function loadSavedData() {
-      try {
-        const [[, savedMenu], [, savedReservations]] = await AsyncStorage.multiGet([MENU_KEY, RESERVATIONS_KEY]);
-        if (!active) return;
-        if (savedMenu) setMenuItems(mergeSavedMenu(savedMenu));
-        if (savedReservations) setReservations(JSON.parse(savedReservations));
-      } catch (error) {
-        console.warn('Could not load restaurant data:', error);
-      } finally {
-        if (active) setIsInitialized(true);
-      }
-    }
-    loadSavedData();
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    if (isInitialized) {
-      const serializableMenu = menuItems.map((item) => ({ ...item, image: undefined }));
-      AsyncStorage.setItem(MENU_KEY, JSON.stringify(serializableMenu)).catch(console.warn);
-    }
-  }, [isInitialized, menuItems]);
-
-  useEffect(() => {
-    if (isInitialized) AsyncStorage.setItem(RESERVATIONS_KEY, JSON.stringify(reservations)).catch(console.warn);
-  }, [isInitialized, reservations]);
-
-  const addMenuItem = useCallback((item) => {
-    setMenuItems((current) => [{ ...item, id: `menu-${Date.now()}` }, ...current]);
-  }, []);
-  const updateMenuPrice = useCallback((id, price) => {
-    setMenuItems((current) => current.map((item) => item.id === id ? { ...item, price: Number(price) } : item));
-  }, []);
-  const toggleMenuAvailability = useCallback((id) => {
-    setMenuItems((current) => current.map((item) => item.id === id ? { ...item, isAvailable: !item.isAvailable } : item));
-  }, []);
-  const addReservation = useCallback((reservation) => {
-    setReservations((current) => [reservation, ...current]);
-  }, []);
-  const cancelReservation = useCallback((id) => {
-    setReservations((current) => current.map((reservation) =>
-      reservation.id === id ? { ...reservation, status: 'Cancelled' } : reservation,
-    ));
-  }, []);
-  const updateReservationStatus = useCallback((id, status) => {
-    setReservations((current) => current.map((reservation) =>
-      reservation.id === id ? { ...reservation, status } : reservation,
-    ));
-  }, []);
-
-  const value = useMemo(() => ({
-    menuItems, reservations, tables, isInitialized,
-    addMenuItem, updateMenuPrice, toggleMenuAvailability,
-    addReservation, cancelReservation, updateReservationStatus,
-  }), [menuItems, reservations, isInitialized, addMenuItem, updateMenuPrice,
-    toggleMenuAvailability, addReservation, cancelReservation, updateReservationStatus]);
-
+  const { user, token } = useAuth();
+  const [menuItems, setMenuItems] = useState([]);
+  const bookings = useApi(user?.role === 'manager' ? '/reservations' : '/reservations/my',
+    { token, enabled: Boolean(user && token), transform: normalizeReservations });
+  const refetchBookings = bookings.refetch;
+  const tableApi = useApi('/tables', { token, enabled: Boolean(user && token), transform: normalizeTables });
+  useEffect(() => { AsyncStorage.multiRemove(['@restaurant/menu', '@restaurant/reservations']).catch(() => {}); }, []);
+  const addReservation = useCallback(async booking => {
+    const response = await apiRequest('/reservations', { method: 'POST', body: {
+      table: booking.tableId, date: booking.date, time: booking.time, partySize: booking.partySize,
+      phone: booking.phone, customerName: booking.customerName } }, token);
+    await refetchBookings().catch(() => {});
+    return normalizeReservation(response);
+  }, [refetchBookings, token]);
+  const updateReservationStatus = useCallback(async (id, status) => {
+    const response = await apiRequest('/reservations/' + id, { method: 'PATCH', body: { status } }, token);
+    await refetchBookings();
+    return normalizeReservation(response);
+  }, [refetchBookings, token]);
+  const cancelReservation = useCallback(id => updateReservationStatus(id, 'Cancelled'), [updateReservationStatus]);
+  const value = useMemo(() => ({ menuItems, setMenuItems, reservations: bookings.data || [],
+    tables: tableApi.data || [], isInitialized: true,
+    reservationsLoading: bookings.loading, reservationsError: bookings.error, refetchReservations: bookings.refetch,
+    tablesLoading: tableApi.loading, tablesError: tableApi.error, refetchTables: tableApi.refetch,
+    addReservation, cancelReservation, updateReservationStatus }),
+  [menuItems, bookings.data, bookings.loading, bookings.error, bookings.refetch,
+    tableApi.data, tableApi.loading, tableApi.error, tableApi.refetch, addReservation, cancelReservation, updateReservationStatus]);
   return <RestaurantContext.Provider value={value}>{children}</RestaurantContext.Provider>;
 }
-
 export function useRestaurant() {
   const context = useContext(RestaurantContext);
   if (!context) throw new Error('useRestaurant must be used inside a RestaurantProvider.');

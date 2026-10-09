@@ -1,10 +1,20 @@
+// ==================================================
+// FILE: LoadingScreen.js
+// PURPOSE: Shows loading spinner and restaurant name
+// VIVA: Props: message sets loading text; edit loading display here
+// ==================================================
+
+// ===== IMPORTS =====
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { BRAND_SHORT_NAME } from '../constants/brand';
 import { useTheme } from '../context/ThemeContext';
 import { FadeSlideView } from './Motion';
 
+// ===== COMPONENT PROPS: LoadingScreen =====
 export default function LoadingScreen({ message = 'Preparing your table…' }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
+  // ===== MAIN DISPLAY =====
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FadeSlideView style={styles.brandBlock}>
@@ -19,6 +29,7 @@ export default function LoadingScreen({ message = 'Preparing your table…' }) {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   brandBlock: { alignItems: 'center', marginBottom: 24 },

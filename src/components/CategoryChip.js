@@ -1,10 +1,20 @@
+// ==================================================
+// FILE: CategoryChip.js
+// PURPOSE: Shows a selectable category button
+// VIVA: Props: label, icon, selected, onPress and disabled control the button
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { ScalePressable } from './Motion';
 
+// ===== COMPONENT PROPS: CategoryChip =====
 export default function CategoryChip({ label, icon = 'restaurant-outline', selected, onPress, disabled = false }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
+  // ===== MAIN DISPLAY =====
   return (
     <ScalePressable
       accessibilityRole='button'
@@ -23,6 +33,7 @@ export default function CategoryChip({ label, icon = 'restaurant-outline', selec
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, borderWidth: 1, marginRight: 9, flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: { fontSize: 14, fontWeight: '700' },

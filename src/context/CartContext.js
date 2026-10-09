@@ -1,17 +1,33 @@
+// ==================================================
+// FILE: CartContext.js
+// PURPOSE: Shares cart state and sends reducer actions
+// VIVA: Edit dispatch, item count and promo validation here; price totals are in screens
+// ==================================================
+
+// ===== IMPORTS =====
 import { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
+import { useRestaurant } from './RestaurantContext';
 import { PROMO_CODES } from '../data/promoCodes';
 import { cartReducer, initialCartState } from '../reducers/cartReducer';
 
 const CartContext = createContext(undefined);
 
 export function CartProvider({ children }) {
+  // ===== INITIAL CART STATE / REDUCER CONNECTION =====
   const [state, dispatch] = useReducer(cartReducer, initialCartState);
+  const { menuItems } = useRestaurant();
+  const items = useMemo(() => state.items.map((item) => {
+    const current = menuItems.find((candidate) => candidate.id === item.id);
+    return { ...item, price: current?.price ?? item.price, isAvailable: current?.isAvailable ?? false };
+  }), [menuItems, state.items]);
+  // ===== DISPATCH CART ACTIONS =====
   const addItem = useCallback((item) => dispatch({ type: 'ADD_ITEM', payload: item }), []);
   const removeItem = useCallback((id) => dispatch({ type: 'REMOVE_ITEM', payload: id }), []);
   const increment = useCallback((id) => dispatch({ type: 'INCREMENT', payload: id }), []);
   const decrement = useCallback((id) => dispatch({ type: 'DECREMENT', payload: id }), []);
   const updateNote = useCallback((id, note) => dispatch({ type: 'UPDATE_NOTE', payload: { id, note } }), []);
   const clearCart = useCallback(() => dispatch({ type: 'CLEAR_CART' }), []);
+  // ===== PROMO CODE VALIDATION =====
   const applyPromo = useCallback((code) => {
     const normalized = code.trim().toUpperCase();
     if (!PROMO_CODES[normalized]) return { success: false, message: 'Invalid code. Try WELCOME10 or FEAST20.' };
@@ -20,12 +36,16 @@ export function CartProvider({ children }) {
   }, []);
   const removePromo = useCallback(() => dispatch({ type: 'REMOVE_PROMO' }), []);
 
+  // ===== SHARED CART VALUES / ITEM COUNT =====
+// Price totals are calculated in CartScreen.js and OrderSummaryScreen.js.
   const value = useMemo(() => ({
     ...state,
+    items,
     itemCount: state.items.reduce((sum, item) => sum + item.quantity, 0),
     addItem, removeItem, increment, decrement, updateNote, clearCart, applyPromo, removePromo,
-  }), [state, addItem, removeItem, increment, decrement, updateNote, clearCart, applyPromo, removePromo]);
+  }), [state, items, addItem, removeItem, increment, decrement, updateNote, clearCart, applyPromo, removePromo]);
 
+  // ===== MAIN DISPLAY =====
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 

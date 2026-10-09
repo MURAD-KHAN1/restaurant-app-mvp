@@ -1,1 +1,2 @@
+
 export const PROMO_CODES = { WELCOME10: 10, FEAST20: 20 };

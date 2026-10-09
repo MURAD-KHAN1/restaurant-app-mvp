@@ -1,21 +1,32 @@
+// ==================================================
+// FILE: CartItemRow.js
+// PURPOSE: Shows one cart item and its controls
+// VIVA: Props: item and action callbacks; edit quantity, remove, price and note here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Animated, Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { formatCurrency } from '../theme/colors';
 import { ScalePressable } from './Motion';
 
+// ===== COMPONENT PROPS: CartItemRow =====
 function CartItemRow({ item, onIncrement, onDecrement, onRemove, onNoteChange }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
+  // ===== LOCAL STATE =====
   const [quantityScale] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     Animated.sequence([
-      Animated.spring(quantityScale, { toValue: 1.22, damping: 8, stiffness: 260, useNativeDriver: true }),
-      Animated.spring(quantityScale, { toValue: 1, damping: 12, stiffness: 240, useNativeDriver: true }),
+      Animated.spring(quantityScale, { toValue: 1.22, damping: 8, stiffness: 260, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(quantityScale, { toValue: 1, damping: 12, stiffness: 240, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
   }, [item.quantity, quantityScale]);
 
+  // ===== MAIN DISPLAY =====
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
       <View style={styles.topRow}>
@@ -24,20 +35,25 @@ function CartItemRow({ item, onIncrement, onDecrement, onRemove, onNoteChange })
         </View>
         <View style={styles.details}>
           <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
+          {/* ===== FOOD PRICE: PRICE TIMES QUANTITY ===== */}
           <Text style={[styles.price, { color: colors.primary }]}>{formatCurrency(item.price * item.quantity)}</Text>
         </View>
+        {/* ===== REMOVE ITEM BUTTON ===== */}
         <ScalePressable accessibilityLabel={'Remove ' + item.name} onPress={() => onRemove(item.id)} hitSlop={8} style={styles.removeButton}>
           <Ionicons name='trash-outline' size={21} color={colors.danger} />
         </ScalePressable>
       </View>
       <View style={styles.actions}>
         <View style={[styles.stepper, { backgroundColor: colors.surfaceMuted }]}>
+          {/* ===== MINUS BUTTON: DECREASE QUANTITY ===== */}
           <ScalePressable accessibilityLabel={'Decrease ' + item.name + ' quantity'} onPress={() => onDecrement(item.id)} style={styles.stepButton}><Ionicons name='remove' size={18} color={colors.text} /></ScalePressable>
           <Animated.Text style={[styles.quantity, { color: colors.text, transform: [{ scale: quantityScale }] }]}>{item.quantity}</Animated.Text>
+          {/* ===== PLUS BUTTON: INCREASE QUANTITY ===== */}
           <ScalePressable accessibilityLabel={'Increase ' + item.name + ' quantity'} onPress={() => onIncrement(item.id)} style={styles.stepButton}><Ionicons name='add' size={18} color={colors.text} /></ScalePressable>
         </View>
-        <Text style={[styles.unitPrice, { color: colors.secondaryText }]}>{formatCurrency(item.price)} each</Text>
+        <Text style={[styles.unitPrice, { color: colors.secondaryText }]}>{formatCurrency(item.price)} each{!item.isAvailable ? ' ? Unavailable' : ''}</Text>
       </View>
+      {/* ===== NOTES INPUT ===== */}
       <View style={[styles.noteShell, { borderColor: colors.border, backgroundColor: colors.background }]}>
         <Ionicons name='create-outline' size={17} color={colors.secondaryText} />
         <TextInput
@@ -55,6 +71,7 @@ function CartItemRow({ item, onIncrement, onDecrement, onRemove, onNoteChange })
 
 export default React.memo(CartItemRow);
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 20, padding: 14, marginBottom: 12, elevation: 2, shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

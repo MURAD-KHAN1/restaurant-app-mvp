@@ -1,3 +1,10 @@
+// ==================================================
+// FILE: AppNavigator.js
+// PURPOSE: Chooses login, customer or manager screens
+// VIVA: Edit routes, role checking, tabs and screen navigation here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -21,6 +28,7 @@ const Stack = createNativeStackNavigator();
 const CustomerStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// ===== CUSTOMER SCREENS =====
 const CUSTOMER_TABS = [
   { name: 'Menu', component: MenuScreen, icon: 'restaurant-outline', activeIcon: 'restaurant' },
   { name: 'Cart', component: CartScreen, icon: 'bag-handle-outline', activeIcon: 'bag-handle' },
@@ -35,9 +43,11 @@ function TabIcon({ route, focused, color, size }) {
     Dashboard: focused ? 'grid' : 'grid-outline',
     Profile: focused ? 'person' : 'person-outline',
   };
+  // ===== MAIN DISPLAY =====
   return <Ionicons name={tab ? (focused ? tab.activeIcon : tab.icon) : managerIcons[route.name]} size={size} color={color} />;
 }
 
+// ===== BOTTOM TAB DESIGN =====
 function sharedTabOptions(colors) {
   return ({ route }) => ({
     headerShown: false,
@@ -63,9 +73,12 @@ function sharedTabOptions(colors) {
   });
 }
 
+// ===== BOTTOM TAB NAVIGATION =====
 function CustomerTabs() {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const { itemCount } = useCart();
+  // ===== MAIN DISPLAY =====
   return (
     <Tab.Navigator screenOptions={sharedTabOptions(colors)}>
       {CUSTOMER_TABS.map((tab) => (
@@ -82,7 +95,9 @@ function CustomerTabs() {
   );
 }
 
+// ===== CUSTOMER STACK SCREENS =====
 function CustomerNavigator() {
+  // ===== MAIN DISPLAY =====
   return (
     <CustomerStack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
       <CustomerStack.Screen name='CustomerTabs' component={CustomerTabs} />
@@ -91,8 +106,11 @@ function CustomerNavigator() {
   );
 }
 
+// ===== MANAGER SCREENS =====
 function ManagerTabs() {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
+  // ===== MAIN DISPLAY =====
   return (
     <Tab.Navigator screenOptions={sharedTabOptions(colors)}>
       <Tab.Screen name='Dashboard' component={ManagerDashboardScreen} />
@@ -101,8 +119,10 @@ function ManagerTabs() {
   );
 }
 
+// ===== CHECK USER LOGIN AND ROLE =====
 export default function AppNavigator() {
-  const { user } = useAuth();
+  // ===== GET SHARED DATA =====
+  const { user, isInitialized: isAuthInitialized } = useAuth();
   const { colors, isDark } = useTheme();
   const { isInitialized: isRestaurantInitialized } = useRestaurant();
   const { isInitialized: areOrdersInitialized } = useOrders();
@@ -119,11 +139,13 @@ export default function AppNavigator() {
     },
   };
 
-  if (!isRestaurantInitialized || !areOrdersInitialized) return <LoadingScreen />;
+  if (!isAuthInitialized || !isRestaurantInitialized || !areOrdersInitialized) return <LoadingScreen />;
 
+  // ===== MAIN DISPLAY =====
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
+        {/* ===== LOGIN / AUTH NAVIGATION AND ROLE CHECKING ===== */}
         {!user ? (
           <Stack.Screen name='Authentication' component={LoginScreen} />
         ) : user.role === 'manager' ? (

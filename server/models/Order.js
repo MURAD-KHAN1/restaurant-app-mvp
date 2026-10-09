@@ -9,6 +9,8 @@ const itemSchema = new mongoose.Schema({
 const money = () => ({ type: Number, required: true, min: 0 });
 const schema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  customerName: { type: String, required: true },
+  customerEmail: { type: String, required: true },
   items: { type: [itemSchema], required: true, validate: {
     validator: items => items.length > 0, message: 'Order must contain at least one item',
   } },

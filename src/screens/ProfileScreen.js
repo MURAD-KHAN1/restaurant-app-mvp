@@ -1,5 +1,13 @@
+import Alert from '../utils/alerts';
+// ==================================================
+// FILE: ProfileScreen.js
+// PURPOSE: Shows account details and settings
+// VIVA: Edit user information, dark mode and logout button here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FadeSlideView, ScalePressable } from '../components/Motion';
 import { BRAND_NAME } from '../constants/brand';
@@ -9,17 +17,24 @@ import { useRestaurant } from '../context/RestaurantContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen() {
+  // ===== GET SHARED DATA =====
   const { user, logout } = useAuth();
   const { colors, isDark, toggleTheme } = useTheme();
   const { orders } = useOrders();
   const { reservations } = useRestaurant();
+
+  // ===== LOGGED-OUT USER: WAIT FOR LOGIN SCREEN =====
+  if (!user) return null;
+
   const orderCount = orders.filter((order) => order.customerEmail === user.email).length;
   const reservationCount = reservations.filter((item) => item.customerEmail === user.email).length;
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FadeSlideView style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
+        {/* ===== USER INFORMATION / PROFILE UI ===== */}
         <View style={[styles.profileCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}><Text style={styles.initial}>{user.name.charAt(0).toUpperCase()}</Text></View>
           <Text style={[styles.name, { color: colors.text }]}>{user.name}</Text>
@@ -28,22 +43,36 @@ export default function ProfileScreen() {
           {user.role === 'customer' ? <View style={[styles.stats, { borderColor: colors.border }]}><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.text }]}>{orderCount}</Text><Text style={[styles.statLabel, { color: colors.secondaryText }]}>Orders</Text></View><View style={[styles.statDivider, { backgroundColor: colors.border }]} /><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.text }]}>{reservationCount}</Text><Text style={[styles.statLabel, { color: colors.secondaryText }]}>Reservations</Text></View></View> : null}
         </View>
 
+        {/* ===== DARK MODE / THEME CHANGE ===== */}
         <View style={[styles.setting, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.settingIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name={isDark ? 'moon' : 'sunny'} size={21} color={colors.primary} /></View>
           <View style={styles.settingText}><Text style={[styles.settingTitle, { color: colors.text }]}>Dark theme</Text><Text style={[styles.settingSubtitle, { color: colors.secondaryText }]}>Use {isDark ? 'light' : 'dark'} restaurant colours</Text></View>
           <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: colors.border, true: colors.primary }} thumbColor='#FFFFFF' />
         </View>
 
-        <ScalePressable onPress={() => Alert.alert('Log out?', 'You can sign back in with a demo account.', [{ text: 'Stay', style: 'cancel' }, { text: 'Log out', style: 'destructive', onPress: logout }])} style={[styles.logout, { borderColor: colors.danger }]}>
-          <Ionicons name='log-out-outline' size={21} color={colors.danger} />
-          <Text style={[styles.logoutText, { color: colors.danger }]}>Log out</Text>
+        {/* ===== LOGOUT BUTTON ===== */}
+        <ScalePressable
+          onPress={async () => { try { await logout(); } catch { Alert.alert('Logout failed', 'Could not clear your saved session. Please try again.'); } }}
+          style={[styles.logout, { borderColor: colors.danger }]}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={21}
+            color={colors.danger}
+          />
+
+          <Text style={[styles.logoutText, { color: colors.danger }]}>
+            Log out
+          </Text>
         </ScalePressable>
-        <Text style={[styles.footer, { color: colors.secondaryText }]}>{BRAND_NAME} · Local demo data only</Text>
+
+        <Text style={[styles.footer, { color: colors.secondaryText }]}>{BRAND_NAME} · Shared menu, orders and reservations</Text>
       </FadeSlideView>
     </SafeAreaView>
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { flex: 1, padding: 17 },

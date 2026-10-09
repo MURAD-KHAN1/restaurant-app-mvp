@@ -1,8 +1,18 @@
+import { normalizeTables } from '../api/reservations';
+import { useApi } from './useApi';
+// ==================================================
+// FILE: useReservation.js
+// PURPOSE: Checks tables and creates bookings
+// VIVA: Edit validation, available tables, create and cancel reservation here
+// ==================================================
+
+// ===== IMPORTS =====
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRestaurant } from '../context/RestaurantContext';
 
 const HOUR_MS = 60 * 60 * 1000;
+// ===== RESERVATION TIME SLOTS =====
 export const TIME_SLOTS = Array.from({ length: 11 }, (_, index) => `${String(index + 12).padStart(2, '0')}:00`);
 
 function localDateString(date) {
@@ -12,6 +22,7 @@ function localDateString(date) {
   return `${year}-${month}-${day}`;
 }
 
+// ===== VALID DATE CHECK =====
 function parseLocalDate(dateString) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
   if (!match) return null;
@@ -21,22 +32,30 @@ function parseLocalDate(dateString) {
   return date;
 }
 
+// ===== RESERVATION LOGIC =====
 export function useReservation() {
-  const { user } = useAuth();
-  const { tables, reservations, addReservation, cancelReservation: cancelSavedReservation } = useRestaurant();
+  // ===== GET SHARED DATA =====
+  const { user, token } = useAuth();
+  const { tables, reservations, addReservation, cancelReservation: cancelSavedReservation,
+    refetchReservations, reservationsLoading, reservationsError, tablesLoading, tablesError, refetchTables } = useRestaurant();
+  // ===== LOCAL STATE =====
   const [selectedDate, setSelectedDate] = useState(() => localDateString(new Date(Date.now() + 24 * HOUR_MS)));
   const [selectedTime, setSelectedTime] = useState('19:00');
   const [partySize, setPartySize] = useState(2);
   const [selectedTablePreference, setSelectedTable] = useState(null);
   const [contactDetails, setContactDetails] = useState({ name: user?.name ?? '', phone: '' });
 
+  // ===== AVAILABLE TABLES / GUEST CAPACITY =====
+  const slotApi = useApi('/tables?date=' + encodeURIComponent(selectedDate)
+    + '&time=' + encodeURIComponent(selectedTime) + '&partySize=' + partySize,
+    { token, transform: normalizeTables, enabled: Boolean(token && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+      && Number.isInteger(partySize) && partySize >= 1 && partySize <= 12) });
+  const refetchSlot = slotApi.refetch;
   const getAvailableTables = useCallback((time = selectedTime, date = selectedDate, size = partySize) => {
-    const occupiedIds = reservations
-      .filter((reservation) => reservation.date === date && reservation.time === time
-        && !['Cancelled', 'Declined'].includes(reservation.status))
-      .map((reservation) => reservation.tableId);
-    return tables.filter((table) => table.seats >= Number(size) && !occupiedIds.includes(table.id));
-  }, [partySize, reservations, selectedDate, selectedTime, tables]);
+    // Current slot availability comes from all active server bookings, not just this customer's list.
+    const candidates = time === selectedTime && date === selectedDate ? (slotApi.data || []) : tables;
+    return candidates.filter(table => table.seats >= Number(size));
+  }, [partySize, selectedDate, selectedTime, slotApi.data, tables]);
 
   const availability = useMemo(() => getAvailableTables(), [getAvailableTables]);
   const selectedTable = useMemo(
@@ -46,6 +65,7 @@ export function useReservation() {
 
   const isSlotAvailable = useCallback((time) => getAvailableTables(time).length > 0, [getAvailableTables]);
 
+  // ===== BOOKING DETAILS =====
   const getBookingSummary = useCallback((values = {}) => ({
     customerName: (values.name ?? contactDetails.name ?? user?.name ?? '').trim(),
     phone: (values.phone ?? contactDetails.phone ?? '').trim(),
@@ -56,6 +76,7 @@ export function useReservation() {
     tableName: selectedTable?.name ?? 'No table selected',
   }), [contactDetails, partySize, selectedDate, selectedTable, selectedTime, user?.name]);
 
+  // ===== VALIDATION =====
   const validateBooking = useCallback((booking) => {
     const errors = {};
     if (!booking.customerName) errors.name = 'Your name is required.';
@@ -73,7 +94,7 @@ export function useReservation() {
 
     if (!TIME_SLOTS.includes(booking.time)) errors.time = 'Choose an available time slot.';
     else if (dateOnly) {
-      const reservationTime = new Date(`${booking.date}T${booking.time}:00`);
+      const reservationTime = new Date(`${booking.date}T${booking.time}:00+05:00`);
       if (reservationTime.getTime() < Date.now() + HOUR_MS) {
         errors.time = 'Reservation must be at least one hour ahead.';
       }
@@ -92,27 +113,24 @@ export function useReservation() {
     validateBooking(getBookingSummary(values))
   ), [getBookingSummary, validateBooking]);
 
-  const createReservation = useCallback((booking = getBookingSummary()) => {
+  // ===== CREATE RESERVATION =====
+  const createReservation = useCallback(async (booking = getBookingSummary()) => {
     const errors = validateBooking(booking);
-    if (Object.keys(errors).length > 0) {
-      return { success: false, error: Object.values(errors)[0] };
-    }
-    const reservation = {
-      id: `RSV-${Date.now().toString().slice(-7)}`,
-      customerName: booking.customerName || user?.name,
-      customerEmail: user?.email,
-      phone: booking.phone,
-      date: booking.date,
-      time: booking.time,
-      partySize: booking.partySize,
-      tableId: booking.tableId,
-      status: 'Pending',
-    };
-    addReservation(reservation);
-    return { success: true, reservation };
-  }, [addReservation, getBookingSummary, user?.email, user?.name, validateBooking]);
-
-  const cancelReservation = useCallback((id) => cancelSavedReservation(id), [cancelSavedReservation]);
+    if (Object.keys(errors).length) return { success: false, error: Object.values(errors)[0] };
+    try {
+      const reservation = await addReservation(booking);
+      await refetchSlot().catch(() => {});
+      return { success: true, reservation };
+    } catch (error) { return { success: false, error: error.message || 'Booking could not be created.' }; }
+  }, [addReservation, getBookingSummary, validateBooking, refetchSlot]);
+  const cancelReservation = useCallback(async id => {
+    await cancelSavedReservation(id);
+    await refetchSlot().catch(() => {});
+  }, [cancelSavedReservation, refetchSlot]);
+  const refresh = useCallback(async () => {
+    await Promise.all([refetchReservations(), refetchTables(), refetchSlot()]);
+  }, [refetchReservations, refetchTables, refetchSlot]);
+  // ===== CURRENT CUSTOMER RESERVATIONS =====
   const myReservations = useMemo(() => (
     reservations.filter((reservation) => reservation.customerEmail === user?.email)
   ), [reservations, user?.email]);
@@ -121,6 +139,8 @@ export function useReservation() {
     selectedDate, setSelectedDate, selectedTime, setSelectedTime,
     partySize, setPartySize, selectedTable, setSelectedTable,
     contactDetails, setContactDetails, availability, isSlotAvailable,
+    loading: reservationsLoading || tablesLoading || slotApi.loading,
+    error: reservationsError || tablesError || slotApi.error, refresh,
     validateForm, getBookingSummary, createReservation, cancelReservation, myReservations,
   };
 }

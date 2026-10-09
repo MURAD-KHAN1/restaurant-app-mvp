@@ -1,3 +1,12 @@
+import { useApi } from '../hooks/useApi';
+import { normalizeMenu } from '../api/menu';
+// ==================================================
+// FILE: MenuScreen.js
+// PURPOSE: Shows food with search, categories and sorting
+// VIVA: Edit search, debounce, favourites and list here; food buttons are in MenuItemCard.js
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -11,31 +20,31 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORY_ICONS, MENU_CATEGORIES } from '../data/menu';
+import { CATEGORY_ICONS, MENU_CATEGORIES } from '../constants/menu';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatCurrency } from '../theme/colors';
 
 const SORT_OPTIONS = ['Featured', 'Price Low to High', 'Price High to Low', 'Name A to Z', 'Favourites'];
 
 export default function MenuScreen({ navigation }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { menuItems: sharedMenuItems } = useRestaurant();
+  const { menuItems: sharedMenuItems, setMenuItems } = useRestaurant();
+  const { data, loading, error, refetch } = useApi('/menu', { transform: normalizeMenu, onData: setMenuItems });
+  const isLoading = loading && data === null;
   const { addItem, itemCount } = useCart();
-  const sharedMenuRef = useRef(sharedMenuItems);
+  // ===== MENU REFERENCES =====
   const searchInputRef = useRef(null);
   const listRef = useRef(null);
   const renderCount = useRef(0);
   const previousQueryRef = useRef('');
-  const refreshTimerRef = useRef(null);
   // Changing a ref does not cause a re-render, while changing state does.
   useEffect(() => {
     renderCount.current += 1;
   });
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [loadAttempt, setLoadAttempt] = useState(0);
+  // ===== LOCAL STATE =====
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [category, setCategory] = useState('All');
@@ -44,36 +53,8 @@ export default function MenuScreen({ navigation }) {
   const [recentSearches, setRecentSearches] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  // ===== DEBOUNCE: WAIT BEFORE SEARCH =====
   const debouncedSearch = useDebounce(search.trim(), 400);
-
-  useEffect(() => {
-    sharedMenuRef.current = sharedMenuItems;
-  }, [sharedMenuItems]);
-
-  useEffect(() => {
-    let isActive = true;
-    let timerId;
-    const menuPromise = new Promise((resolve, reject) => {
-      timerId = setTimeout(() => {
-        const latestMenu = sharedMenuRef.current;
-        if (Array.isArray(latestMenu)) resolve(latestMenu);
-        else reject(new Error('Menu could not be loaded. Please try again.'));
-      }, 1500);
-    });
-
-    menuPromise
-      .catch((loadError) => {
-        if (isActive) setError(loadError.message || 'Menu could not be loaded. Please try again.');
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false);
-      });
-
-    return () => {
-      isActive = false;
-      clearTimeout(timerId);
-    };
-  }, [loadAttempt]);
 
   useEffect(() => {
     if (debouncedSearch.length < 2) return;
@@ -85,11 +66,9 @@ export default function MenuScreen({ navigation }) {
     ].slice(0, 5));
   }, [debouncedSearch]);
 
-  useEffect(() => () => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-  }, []);
 
   // Filtered and sorted menu items are derived data, so useMemo is preferable to separate state.
+  // ===== SEARCH FUNCTION / CATEGORY FILTER / SORT =====
   const visibleItems = useMemo(() => {
     const query = debouncedSearch.toLowerCase();
     const result = sharedMenuItems.filter((item) => {
@@ -114,10 +93,13 @@ export default function MenuScreen({ navigation }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
+  // ===== FAVOURITE FUNCTION =====
   const toggleFavourite = useCallback((id) => {
     setFavourites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }, []);
+  // ===== ADD TO CART FUNCTION =====
   const handleAdd = useCallback((item) => addItem(item), [addItem]);
+  // ===== FOOD CARD: MenuItemCard.js =====
   const renderMenuItem = useCallback(({ item, index }) => (
     <MenuItemCard item={item} index={index} onAdd={handleAdd} onToggleFavourite={toggleFavourite} isFavourite={favourites.includes(item.id)} />
   ), [favourites, handleAdd, toggleFavourite]);
@@ -130,20 +112,17 @@ export default function MenuScreen({ navigation }) {
     setSearch('');
     searchInputRef.current?.focus();
   };
-  const refresh = () => {
+  // ===== REFRESH MENU =====
+  const refresh = async () => {
     setRefreshing(true);
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    refreshTimerRef.current = setTimeout(() => {
-      setRefreshing(false);
-    }, 700);
+    try { await refetch(); } catch { /* useApi displays the request error. */ }
+    finally { setRefreshing(false); }
   };
-  const retryLoad = () => {
-    setIsLoading(true);
-    setError(null);
-    setLoadAttempt((current) => current + 1);
-  };
+  const retryLoad = () => refetch().catch(() => {});
 
+  // ===== MENU LOADING =====
   if (isLoading) {
+    // ===== MAIN DISPLAY =====
     return (
       <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.loadingState}>
@@ -158,7 +137,9 @@ export default function MenuScreen({ navigation }) {
     );
   }
 
+  // ===== MENU ERROR =====
   if (error) {
+    // ===== MAIN DISPLAY =====
     return (
       <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <EmptyState
@@ -191,6 +172,7 @@ export default function MenuScreen({ navigation }) {
         </View>
         <Text style={styles.heroTitle}>What are you craving today?</Text>
         <Text style={styles.heroText}>Thoughtful flavours and cafe favourites, prepared fresh for you.</Text>
+        {/* ===== SEARCH BAR ===== */}
         <View style={[styles.searchShell, { backgroundColor: colors.surface }]}>
           <Pressable accessibilityLabel='Focus menu search' onPress={() => searchInputRef.current?.focus()} hitSlop={8}>
             <Ionicons name='search' size={21} color={colors.primary} />
@@ -236,6 +218,7 @@ export default function MenuScreen({ navigation }) {
         </View>
       ) : null}
 
+      {/* ===== CATEGORY FILTER ===== */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
         {MENU_CATEGORIES.map((item) => <CategoryChip key={item} label={item} icon={CATEGORY_ICONS[item]} selected={category === item} onPress={() => setCategory(item)} />)}
       </ScrollView>
@@ -244,11 +227,12 @@ export default function MenuScreen({ navigation }) {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Our menu</Text>
           <Text style={[styles.resultText, { color: colors.secondaryText }]}>{visibleItems.length} dishes ready to explore</Text>
         </View>
-        <Ionicons name='options-outline' size={22} color={colors.primary} />
+        <Pressable accessibilityLabel='Refresh menu' disabled={loading} onPress={refresh}><Ionicons name='refresh-outline' size={22} color={colors.primary} /></Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortRow}>
         {SORT_OPTIONS.map((item) => {
           const selected = sort === item;
+          // ===== MAIN DISPLAY =====
           return (
             <Pressable key={item} onPress={() => setSort(item)} style={[styles.sortChip, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.surfaceMuted : colors.surface }]}>
               <Text style={{ color: selected ? colors.primary : colors.secondaryText, fontWeight: '700', fontSize: 12 }}>{item}</Text>
@@ -259,8 +243,10 @@ export default function MenuScreen({ navigation }) {
     </FadeSlideView>
   );
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      {/* ===== FOOD ITEM LIST ===== */}
       <FlatList
         ref={listRef}
         data={visibleItems}
@@ -288,7 +274,9 @@ export default function MenuScreen({ navigation }) {
 }
 
 function SpecialTile({ item, colors, onPress }) {
+  // ===== LOCAL STATE =====
   const [imageFailed, setImageFailed] = useState(false);
+  // ===== MAIN DISPLAY =====
   return (
     <ScalePressable onPress={onPress} style={[styles.specialCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
       <View style={[styles.specialImageWrap, { backgroundColor: colors.surfaceMuted }]}>
@@ -302,6 +290,7 @@ function SpecialTile({ item, colors, onPress }) {
       <View style={styles.specialBody}>
         <View style={styles.specialCopy}>
           <Text numberOfLines={1} style={[styles.specialName, { color: colors.text }]}>{item.name}</Text>
+          {/* ===== FOOD PRICE: SPECIAL TILE ===== */}
           <Text style={[styles.specialPrice, { color: colors.primary }]}>{formatCurrency(item.price)}</Text>
         </View>
         <Ionicons name='chevron-forward' size={18} color={colors.secondaryText} />
@@ -310,6 +299,7 @@ function SpecialTile({ item, colors, onPress }) {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },

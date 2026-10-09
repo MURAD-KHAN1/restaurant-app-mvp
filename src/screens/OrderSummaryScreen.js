@@ -1,6 +1,14 @@
+// ==================================================
+// FILE: OrderSummaryScreen.js
+// PURPOSE: Reviews cart items and confirms an order
+// VIVA: Edit order type, table, pickup time, totals and place order button here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Alert from '../utils/alerts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
 import { FadeSlideView, ScalePressable } from '../components/Motion';
@@ -12,12 +20,14 @@ import { useRestaurant } from '../context/RestaurantContext';
 import { useTheme } from '../context/ThemeContext';
 import { formatCurrency } from '../theme/colors';
 
+// ===== PRICE CALCULATION RATES =====
 const SERVICE_CHARGE_RATE = 0.05;
 const SALES_TAX_RATE = 0.15;
 const ORDER_TYPES = ['Dine-in', 'Takeaway'];
 const PICKUP_TIMES = ['15 minutes', '30 minutes', '45 minutes', '60 minutes'];
 
 const OrderLine = React.memo(function OrderLine({ item, colors }) {
+  // ===== MAIN DISPLAY =====
   return (
     <View style={[styles.itemRow, { borderColor: colors.border }]}>
       <View style={[styles.quantity, { backgroundColor: colors.surfaceMuted }]}>
@@ -33,6 +43,7 @@ const OrderLine = React.memo(function OrderLine({ item, colors }) {
 });
 
 function SummaryRow({ label, value, colors, discount = false }) {
+  // ===== MAIN DISPLAY =====
   return (
     <View style={styles.summaryRow}>
       <Text style={[styles.summaryLabel, { color: colors.secondaryText }]}>{label}</Text>
@@ -44,15 +55,21 @@ function SummaryRow({ label, value, colors, discount = false }) {
 }
 
 export default function OrderSummaryScreen({ navigation }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const { user } = useAuth();
   const { placeOrder } = useOrders();
   const { tables } = useRestaurant();
   const { items, promoCode, discountPercent, clearCart } = useCart();
+  // ===== LOCAL STATE =====
+  const submittingRef = useRef(false);
   const [orderType, setOrderType] = useState('Dine-in');
-  const [selectedTable, setSelectedTable] = useState(tables[0]?.id ?? '');
+  const [tablePreference, setSelectedTable] = useState('');
+  const selectedTable = tables.some(table => table.id === tablePreference) ? tablePreference : tables[0]?.id ?? '';
   const [pickupTime, setPickupTime] = useState(PICKUP_TIMES[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ===== SUBTOTAL / DISCOUNT / FINAL TOTAL =====
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const serviceCharge = subtotal * SERVICE_CHARGE_RATE;
@@ -61,8 +78,13 @@ export default function OrderSummaryScreen({ navigation }) {
     return { subtotal, serviceCharge, salesTax, discount, grandTotal: subtotal + serviceCharge + salesTax - discount };
   }, [discountPercent, items]);
 
-  const confirmOrder = useCallback(() => {
-    if (!items.length) return;
+  // ===== CONFIRM ORDER FUNCTION AND VALIDATION =====
+  const confirmOrder = useCallback(async () => {
+    if (!user || !items.length || submittingRef.current) return;
+    if (items.some((item) => !item.isAvailable)) {
+      Alert.alert('Item unavailable', 'Remove unavailable dishes from your cart before placing your order.');
+      return;
+    }
     if (orderType === 'Dine-in' && !selectedTable) {
       Alert.alert('Select a table', 'Choose a table before placing your dine-in order.');
       return;
@@ -71,23 +93,22 @@ export default function OrderSummaryScreen({ navigation }) {
       Alert.alert('Select pickup time', 'Choose when you would like to collect your order.');
       return;
     }
-    const order = placeOrder({
-      customerName: user.name,
-      customerEmail: user.email,
-      items: items.map((item) => ({ ...item })),
-      total: totals.grandTotal,
-      type: orderType,
-      ...(orderType === 'Dine-in' ? { table: selectedTable } : { pickupTime }),
-      totals,
-      promoCode,
-    });
-    clearCart();
-    Alert.alert(BRAND_SHORT_NAME + ' order placed', order.id + ' is now pending. We will keep you updated.', [
-      { text: 'Track order', onPress: () => navigation.navigate('CustomerTabs', { screen: 'Orders' }) },
-    ]);
-  }, [clearCart, items, navigation, orderType, pickupTime, placeOrder, promoCode, selectedTable, totals, user.email, user.name]);
+    // ===== CUSTOMER DETAILS AND ORDER ITEMS =====
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      const order = await placeOrder({ items, type: orderType, promoCode,
+        ...(orderType === 'Dine-in' ? { table: selectedTable } : { pickupTime }) });
+      clearCart();
+      Alert.alert(BRAND_SHORT_NAME + ' order placed', order.id + ' is now pending. Final total: ' + formatCurrency(order.total), [
+        { text: 'Track order', onPress: () => navigation.navigate('CustomerTabs', { screen: 'Orders' }) },
+      ]);
+    } catch (error) { Alert.alert('Order could not be placed', error.message || 'Please try again. Your cart has been kept.'); }
+    finally { submittingRef.current = false; setIsSubmitting(false); }
+  }, [clearCart, items, navigation, orderType, pickupTime, placeOrder, promoCode, selectedTable, user]);
 
   if (!items.length) {
+    // ===== MAIN DISPLAY =====
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <Header colors={colors} onBack={() => navigation.goBack()} />
@@ -96,6 +117,7 @@ export default function OrderSummaryScreen({ navigation }) {
     );
   }
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Header colors={colors} onBack={() => navigation.goBack()} />
@@ -103,14 +125,17 @@ export default function OrderSummaryScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Items</Text>
+          {/* ===== ORDER ITEMS ===== */}
           {items.map((item) => <OrderLine key={item.id} item={item} colors={colors} />)}
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Order type</Text>
+          {/* ===== ORDER TYPE ===== */}
           <View style={styles.optionRow}>
             {ORDER_TYPES.map((type) => {
               const selected = orderType === type;
+              // ===== MAIN DISPLAY =====
               return (
                 <Pressable key={type} onPress={() => setOrderType(type)} style={[styles.typeOption, { backgroundColor: selected ? colors.primary : colors.background, borderColor: selected ? colors.primary : colors.border }]}>
                   <Ionicons name={type === 'Dine-in' ? 'restaurant-outline' : 'bag-handle-outline'} size={19} color={selected ? '#FFFFFF' : colors.primary} />
@@ -120,12 +145,15 @@ export default function OrderSummaryScreen({ navigation }) {
             })}
           </View>
           <Text style={[styles.optionLabel, { color: colors.text }]}>{orderType === 'Dine-in' ? 'Select table' : 'Select pickup time'}</Text>
+          {/* ===== TABLE / PICKUP TIME ===== */}
           <View style={styles.choiceWrap}>
             {orderType === 'Dine-in' ? tables.map((table) => {
               const selected = selectedTable === table.id;
+              // ===== MAIN DISPLAY =====
               return <Pressable key={table.id} onPress={() => setSelectedTable(table.id)} style={[styles.choice, { backgroundColor: selected ? colors.surfaceMuted : colors.background, borderColor: selected ? colors.primary : colors.border }]}><Text style={[styles.choiceText, { color: selected ? colors.primary : colors.text }]}>{table.name}</Text></Pressable>;
             }) : PICKUP_TIMES.map((time) => {
               const selected = pickupTime === time;
+              // ===== MAIN DISPLAY =====
               return <Pressable key={time} onPress={() => setPickupTime(time)} style={[styles.choice, { backgroundColor: selected ? colors.surfaceMuted : colors.background, borderColor: selected ? colors.primary : colors.border }]}><Text style={[styles.choiceText, { color: selected ? colors.primary : colors.text }]}>In {time}</Text></Pressable>;
             })}
           </View>
@@ -136,8 +164,10 @@ export default function OrderSummaryScreen({ navigation }) {
           <SummaryRow label='Subtotal' value={totals.subtotal} colors={colors} />
           <SummaryRow label='Service charge (5%)' value={totals.serviceCharge} colors={colors} />
           <SummaryRow label='Sales tax (15%)' value={totals.salesTax} colors={colors} />
+          {/* ===== PROMO / DISCOUNT ===== */}
           {totals.discount ? <SummaryRow label={'Promo ' + promoCode + ' (' + discountPercent + '%)'} value={totals.discount} colors={colors} discount /> : null}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {/* ===== FINAL TOTAL PRICE ===== */}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.text }]}>Grand total</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(totals.grandTotal)}</Text>
@@ -146,10 +176,11 @@ export default function OrderSummaryScreen({ navigation }) {
 
         <View style={[styles.notice, { backgroundColor: colors.surfaceMuted }]}>
           <Ionicons name='information-circle-outline' size={20} color={colors.primary} />
-          <Text style={[styles.noticeText, { color: colors.secondaryText }]}>This is a frontend-only demo. No payment will be collected.</Text>
+          <Text style={[styles.noticeText, { color: colors.secondaryText }]}>The server confirms final prices. No payment will be collected.</Text>
         </View>
-        <ScalePressable onPress={confirmOrder} style={[styles.confirmButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
-          <Text style={styles.confirmText}>Confirm order</Text>
+        {/* ===== PLACE ORDER BUTTON / CONFIRM ORDER BUTTON ===== */}
+        <ScalePressable disabled={isSubmitting} onPress={confirmOrder} style={[styles.confirmButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
+          {isSubmitting ? <ActivityIndicator color='#FFFFFF' /> : <Text style={styles.confirmText}>Confirm order</Text>}
           <View style={styles.confirmRight}><Text style={styles.confirmText}>{formatCurrency(totals.grandTotal)}</Text><Ionicons name='checkmark-circle-outline' size={21} color='#FFFFFF' /></View>
         </ScalePressable>
         </ScrollView>
@@ -159,6 +190,7 @@ export default function OrderSummaryScreen({ navigation }) {
 }
 
 function Header({ colors, onBack }) {
+  // ===== MAIN DISPLAY =====
   return (
     <View style={[styles.header, { borderColor: colors.border }]}>
       <ScalePressable accessibilityLabel='Back to cart' onPress={onBack} style={[styles.backButton, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='arrow-back' size={22} color={colors.text} /></ScalePressable>
@@ -167,6 +199,7 @@ function Header({ colors, onBack }) {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   flex: { flex: 1 },

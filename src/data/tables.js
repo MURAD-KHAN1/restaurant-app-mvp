@@ -1,3 +1,10 @@
+// ==================================================
+// FILE: tables.js
+// PURPOSE: Provides local tables and seat counts
+// VIVA: Edit table names, seats and areas here
+// ==================================================
+
+// ===== LOCAL TABLE DATA =====
 export const tables = [
   { id: 'T1', name: 'Window Table 1', seats: 2, area: 'Window' },
   { id: 'T2', name: 'Window Table 2', seats: 4, area: 'Window' },

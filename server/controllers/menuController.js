@@ -42,7 +42,7 @@ exports.updateMenuItem = async (req, res) => {
   try {
     if (!validId(req.params.id)) return res.status(400).json({ message: 'Invalid menu item ID' });
     if (!validBody(req.body)) return res.status(400).json({ message: 'Invalid menu item fields' });
-    const item = await MenuItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true, runValidators: true });
+    const item = await MenuItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { returnDocument: 'after', runValidators: true });
     if (!item) return res.status(404).json({ message: 'Menu item not found' });
     return res.json(item);
   } catch (err) { return respondError(res, err); }

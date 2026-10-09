@@ -1,6 +1,14 @@
+// ==================================================
+// FILE: CartScreen.js
+// PURPOSE: Shows cart items, promo code and totals
+// VIVA: Edit totals and checkout here; quantity buttons are in CartItemRow.js
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Alert from '../utils/alerts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CartItemRow from '../components/CartItemRow';
 import EmptyState from '../components/EmptyState';
@@ -10,11 +18,14 @@ import { useTheme } from '../context/ThemeContext';
 import { formatCurrency } from '../theme/colors';
 
 export default function CartScreen({ navigation }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const { items, promoCode, discountPercent, increment, decrement, removeItem, updateNote, clearCart, applyPromo, removePromo } = useCart();
+  // ===== LOCAL STATE =====
   const [promoInput, setPromoInput] = useState('');
   const [promoMessage, setPromoMessage] = useState('');
 
+  // ===== SUBTOTAL / DISCOUNT / TOTAL PRICE =====
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const serviceCharge = subtotal * 0.05;
@@ -23,21 +34,26 @@ export default function CartScreen({ navigation }) {
     return { subtotal, serviceCharge, salesTax, discount, grandTotal: subtotal + serviceCharge + salesTax - discount };
   }, [discountPercent, items]);
 
+  // ===== INCREASE / DECREASE / REMOVE / NOTE HANDLERS =====
   const handleIncrement = useCallback((id) => increment(id), [increment]);
   const handleDecrement = useCallback((id) => decrement(id), [decrement]);
   const handleRemove = useCallback((id) => removeItem(id), [removeItem]);
   const handleNote = useCallback((id, note) => updateNote(id, note), [updateNote]);
 
+  // ===== APPLY PROMO CODE =====
   const submitPromo = () => {
     const result = applyPromo(promoInput);
     setPromoMessage(result.message);
     if (result.success) setPromoInput('');
   };
+  // ===== CHECKOUT: OPEN ORDER SUMMARY =====
   const checkout = () => {
     navigation.navigate('OrderSummary');
   };
 
+  // ===== EMPTY CART =====
   if (!items.length) {
+    // ===== MAIN DISPLAY =====
     return (
       <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.titleBlock}><Text style={[styles.title, { color: colors.text }]}>Your cart</Text></View>
@@ -46,6 +62,7 @@ export default function CartScreen({ navigation }) {
     );
   }
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FadeSlideView style={styles.flex}>
@@ -57,8 +74,10 @@ export default function CartScreen({ navigation }) {
           </Pressable>
         </View>
 
+        {/* ===== CART ITEMS: QUANTITY BUTTONS AND NOTES IN CartItemRow.js ===== */}
         {items.map((item) => <CartItemRow key={item.id} item={item} onIncrement={handleIncrement} onDecrement={handleDecrement} onRemove={handleRemove} onNoteChange={handleNote} />)}
 
+        {/* ===== PROMO CODE ===== */}
         <View style={[styles.promoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardTitleRow}><Ionicons name='pricetag-outline' size={20} color={colors.primary} /><Text style={[styles.cardTitle, { color: colors.text }]}>Promo code</Text></View>
           {promoCode ? (
@@ -77,13 +96,17 @@ export default function CartScreen({ navigation }) {
 
         <View style={[styles.summary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Order summary</Text>
+          {/* ===== SUBTOTAL / SERVICE CHARGE / SALES TAX ===== */}
           <SummaryRow label='Subtotal' value={totals.subtotal} colors={colors} />
           <SummaryRow label='Service charge (5%)' value={totals.serviceCharge} colors={colors} />
           <SummaryRow label='Sales tax (15%)' value={totals.salesTax} colors={colors} />
+          {/* ===== DISCOUNT ===== */}
           {totals.discount ? <SummaryRow label={'Discount (' + discountPercent + '%)'} value={-totals.discount} colors={colors} isDiscount /> : null}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {/* ===== TOTAL PRICE ===== */}
           <View style={styles.totalRow}><Text style={[styles.totalLabel, { color: colors.text }]}>Grand total</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(totals.grandTotal)}</Text></View>
         </View>
+        {/* ===== CHECKOUT / PLACE ORDER BUTTON: REVIEW FIRST ===== */}
         <ScalePressable onPress={checkout} style={[styles.checkout, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}>
           <Text style={styles.checkoutText}>Review order</Text>
           <View style={styles.checkoutPrice}><Text style={styles.checkoutText}>{formatCurrency(totals.grandTotal)}</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></View>
@@ -95,6 +118,7 @@ export default function CartScreen({ navigation }) {
 }
 
 function SummaryRow({ label, value, colors, isDiscount = false }) {
+  // ===== MAIN DISPLAY =====
   return (
     <View style={styles.summaryRow}>
       <Text style={[styles.summaryLabel, { color: colors.secondaryText }]}>{label}</Text>
@@ -103,6 +127,7 @@ function SummaryRow({ label, value, colors, isDiscount = false }) {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   flex: { flex: 1 },

@@ -1,12 +1,22 @@
+// ==================================================
+// FILE: MenuItemCard.js
+// PURPOSE: Shows one food card with price and buttons
+// VIVA: Props: item, index, onAdd, onToggleFavourite, isFavourite; edit card actions here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { categoryColors, formatCurrency } from '../theme/colors';
 import { FadeSlideView, ScalePressable } from './Motion';
 
+// ===== COMPONENT PROPS: MenuItemCard =====
 function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
+  // ===== LOCAL STATE =====
   const [imageFailed, setImageFailed] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const [heartScale] = useState(() => new Animated.Value(1));
@@ -14,25 +24,28 @@ function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }
   const categoryColor = categoryColors[item.category] ?? colors.primary;
   const hasImage = Boolean(item.image) && !imageFailed;
 
+  // ===== FAVOURITE FUNCTION =====
   const handleFavourite = () => {
     Animated.sequence([
-      Animated.spring(heartScale, { toValue: 1.35, damping: 8, stiffness: 300, useNativeDriver: true }),
-      Animated.spring(heartScale, { toValue: 1, damping: 12, stiffness: 260, useNativeDriver: true }),
+      Animated.spring(heartScale, { toValue: 1.35, damping: 8, stiffness: 300, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(heartScale, { toValue: 1, damping: 12, stiffness: 260, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
     onToggleFavourite(item.id);
   };
 
+  // ===== ADD TO CART FUNCTION =====
   const handleAdd = () => {
     onAdd(item);
     setJustAdded(true);
     addFeedback.setValue(0);
     Animated.sequence([
-      Animated.spring(addFeedback, { toValue: 1, damping: 9, stiffness: 260, useNativeDriver: true }),
+      Animated.spring(addFeedback, { toValue: 1, damping: 9, stiffness: 260, useNativeDriver: Platform.OS !== 'web' }),
       Animated.delay(520),
-      Animated.timing(addFeedback, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(addFeedback, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
     ]).start(() => setJustAdded(false));
   };
 
+  // ===== MAIN DISPLAY =====
   return (
     <FadeSlideView delay={Math.min(index, 7) * 65} style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow, borderColor: colors.border }, !item.isAvailable && styles.unavailableCard]}>
       <View style={[styles.visual, { backgroundColor: colors.surfaceMuted }]}>
@@ -66,6 +79,7 @@ function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }
           </View>
         ) : null}
 
+        {/* ===== FAVORITE BUTTON / FAVOURITE BUTTON ===== */}
         <ScalePressable
           accessibilityLabel={isFavourite ? 'Remove ' + item.name + ' from favourites' : 'Add ' + item.name + ' to favourites'}
           hitSlop={8}
@@ -89,17 +103,21 @@ function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }
 
       <View style={styles.content}>
         <View style={styles.titleRow}>
+          {/* ===== FOOD ITEM NAME ===== */}
           <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+          {/* ===== FOOD PRICE ===== */}
           <Text style={[styles.price, { color: colors.primary }]}>{formatCurrency(item.price)}</Text>
         </View>
         <Text numberOfLines={2} style={[styles.description, { color: colors.secondaryText }]}>{item.description}</Text>
         <View style={styles.footer}>
+          {/* ===== FOOD AVAILABILITY ===== */}
           <View style={styles.availability}>
             <Ionicons name={item.isAvailable ? 'checkmark-circle' : 'close-circle'} size={17} color={item.isAvailable ? colors.success : colors.danger} />
             <Text style={[styles.availabilityText, { color: item.isAvailable ? colors.success : colors.danger }]}>
               {item.isAvailable ? 'Available now' : 'Unavailable'}
             </Text>
           </View>
+          {/* ===== ADD TO CART BUTTON ===== */}
           <ScalePressable
             accessibilityRole='button'
             disabled={!item.isAvailable}
@@ -131,6 +149,7 @@ function MenuItemCard({ item, index = 0, onAdd, onToggleFavourite, isFavourite }
 
 export default React.memo(MenuItemCard);
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   card: {
     borderWidth: StyleSheet.hairlineWidth,

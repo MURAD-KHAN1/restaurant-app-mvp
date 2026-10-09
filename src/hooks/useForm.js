@@ -1,9 +1,18 @@
+// ==================================================
+// FILE: useForm.js
+// PURPOSE: Keeps form values and checks input errors
+// VIVA: Edit input changes, validation, submit and reset here
+// ==================================================
+
+// ===== IMPORTS =====
 import { useMemo, useState } from 'react';
 
 export function useForm(initialValues, validate, onSubmit) {
+  // ===== FORM VALUES =====
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState({});
 
+  // ===== INPUT CHANGE =====
   const handleChange = (field, value) => {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => {
@@ -14,6 +23,7 @@ export function useForm(initialValues, validate, onSubmit) {
     });
   };
 
+  // ===== FORM VALIDATION / SUBMIT =====
   const handleSubmit = async () => {
     const nextErrors = validate(values);
     setErrors(nextErrors);
@@ -22,6 +32,7 @@ export function useForm(initialValues, validate, onSubmit) {
     return true;
   };
 
+  // ===== FORM RESET =====
   const reset = (nextValues = initialValues) => {
     setValues(nextValues);
     setErrors({});

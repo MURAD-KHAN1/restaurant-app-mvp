@@ -1,6 +1,14 @@
+// ==================================================
+// FILE: ReservationScreen.js
+// PURPOSE: Shows booking inputs and saved reservations
+// VIVA: Edit date, time, guests, tables, request, confirm and cancel buttons here
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Modal, RefreshControl, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
+import Alert from '../utils/alerts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
 import { FadeSlideView, ScalePressable } from '../components/Motion';
@@ -11,12 +19,17 @@ import { useForm } from '../hooks/useForm';
 import { TIME_SLOTS, useReservation } from '../hooks/useReservation';
 
 export default function ReservationScreen() {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const reservation = useReservation();
   const { setContactDetails, setPartySize, setSelectedDate } = reservation;
+  // ===== LOCAL STATE =====
   const [confirmation, setConfirmation] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitting = useRef(false);
   const [modalProgress] = useState(() => new Animated.Value(0));
   const debouncedDate = useDebounce(reservation.selectedDate, 350);
+  // ===== RESERVATION FORM AND VALIDATION =====
   const form = useForm({
     name: reservation.contactDetails.name,
     phone: reservation.contactDetails.phone,
@@ -40,24 +53,25 @@ export default function ReservationScreen() {
       damping: 13,
       stiffness: 165,
       mass: 0.8,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     });
     animation.start();
     return () => animation.stop();
   }, [confirmation, modalProgress]);
 
-  const confirmReservation = () => {
-    if (!confirmation) return;
-    const result = reservation.createReservation(confirmation);
-    if (!result.success) {
+  // ===== CONFIRM RESERVATION FUNCTION =====
+  const confirmReservation = async () => {
+    if (!confirmation || submitting.current) return;
+    submitting.current = true; setIsSubmitting(true);
+    try {
+      const result = await reservation.createReservation(confirmation);
+      if (!result.success) { Alert.alert('Reservation unavailable', result.error); return; }
       setConfirmation(null);
-      Alert.alert('Reservation unavailable', result.error);
-      return;
-    }
-    setConfirmation(null);
-    Alert.alert('Reservation requested', 'Your ' + BRAND_SHORT_NAME + ' booking is pending manager approval.');
+      Alert.alert('Reservation requested', 'Your ' + BRAND_SHORT_NAME + ' booking is pending manager approval.');
+    } finally { submitting.current = false; setIsSubmitting(false); }
   };
 
+  // ===== FORM INPUT AND ERROR DISPLAY =====
   const field = (name, label, placeholder, keyboardType = 'default') => (
     <View style={styles.field}>
       <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
@@ -73,27 +87,32 @@ export default function ReservationScreen() {
     </View>
   );
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FadeSlideView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled'>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={reservation.loading} onRefresh={() => reservation.refresh().catch(() => {})} tintColor={colors.primary} />}>
         <View style={styles.headingRow}>
           <View style={styles.headingCopy}><Text style={[styles.title, { color: colors.text }]}>Reserve a table</Text><Text style={[styles.subtitle, { color: colors.secondaryText }]}>Plan a memorable meal at {BRAND_NAME}.</Text></View>
           <View style={[styles.headerIcon, { backgroundColor: colors.surfaceMuted }]}><Ionicons name='calendar' size={25} color={colors.primary} /></View>
         </View>
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {/* ===== CONTACT DETAILS ===== */}
           {field('name', 'Guest name', 'Full name')}
           {field('phone', 'Phone number', '03XX-XXXXXXX', 'phone-pad')}
+          {/* ===== DATE / GUESTS ===== */}
           <View style={styles.twoColumns}>
             <View style={styles.flexField}>{field('date', 'Date', 'YYYY-MM-DD', 'numbers-and-punctuation')}</View>
             <View style={styles.partyField}>{field('partySize', 'Guests', '1–12', 'number-pad')}</View>
           </View>
           <Text style={[styles.debounceHint, { color: colors.secondaryText }]}>Checking availability for {debouncedDate}…</Text>
           <Text style={[styles.label, { color: colors.text }]}>Time</Text>
+          {/* ===== TIME SLOTS ===== */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.slotRow}>
             {TIME_SLOTS.map((time) => {
               const available = reservation.isSlotAvailable(time);
               const selected = reservation.selectedTime === time;
+              // ===== MAIN DISPLAY =====
               return (
                 <Pressable key={time} disabled={!available} onPress={() => reservation.setSelectedTime(time)} style={[styles.slot, { backgroundColor: selected ? colors.primary : colors.background, borderColor: selected ? colors.primary : colors.border }, !available && styles.disabled]}>
                   <Text style={{ color: selected ? '#FFFFFF' : colors.text, fontWeight: '800', fontSize: 13 }}>{time}</Text>
@@ -103,8 +122,10 @@ export default function ReservationScreen() {
           </ScrollView>
           {form.errors.time ? <Text style={[styles.error, { color: colors.danger }]}>{form.errors.time}</Text> : null}
           <Text style={[styles.label, { color: colors.text }]}>Available table</Text>
+          {/* ===== AVAILABLE TABLES ===== */}
           {reservation.availability.length ? reservation.availability.map((table) => {
             const selected = reservation.selectedTable?.id === table.id;
+            // ===== MAIN DISPLAY =====
             return (
               <Pressable key={table.id} onPress={() => reservation.setSelectedTable(table)} style={[styles.tableRow, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.surfaceMuted : colors.background }]}>
                 <View style={[styles.tableIcon, { backgroundColor: colors.surface }]}><Ionicons name='people-outline' size={20} color={colors.primary} /></View>
@@ -114,15 +135,21 @@ export default function ReservationScreen() {
             );
           }) : <Text style={[styles.noTables, { color: colors.danger }]}>No suitable tables are free at this time.</Text>}
           {form.errors.table ? <Text style={[styles.error, { color: colors.danger }]}>{form.errors.table}</Text> : null}
+          {/* ===== RESERVATION BUTTON: VALIDATE AND REVIEW ===== */}
           <ScalePressable onPress={form.handleSubmit} style={[styles.reserveButton, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}><Text style={styles.reserveText}>Request reservation</Text><Ionicons name='arrow-forward' size={20} color='#FFFFFF' /></ScalePressable>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Your reservations</Text>
+        <Pressable accessibilityLabel='Refresh reservations' onPress={() => reservation.refresh().catch(() => {})}><Text style={{ color: colors.primary, marginBottom: 10 }}>Refresh reservations</Text></Pressable>
+        {reservation.loading ? <ActivityIndicator color={colors.primary} /> : null}
+        {reservation.error ? <EmptyState icon='alert-circle-outline' title='Unable to load reservations' message={reservation.error} actionLabel='Retry' onAction={() => reservation.refresh().catch(() => {})} /> : null}
+        {/* ===== RESERVATION LIST ===== */}
         {reservation.myReservations.length ? reservation.myReservations.map((item) => (
           <View key={item.id} style={[styles.reservationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.reservationTop}><Text style={[styles.reservationDate, { color: colors.text }]}>{item.date} at {item.time}</Text><Text style={[styles.status, { color: item.status === 'Cancelled' || item.status === 'Declined' ? colors.danger : colors.success }]}>{item.status}</Text></View>
-            <Text style={[styles.reservationMeta, { color: colors.secondaryText }]}>{item.partySize} guests · Table {item.tableId} · {item.id}</Text>
-            {!['Cancelled', 'Declined'].includes(item.status) ? <Pressable onPress={() => Alert.alert('Cancel reservation?', 'This will release your table.', [{ text: 'Keep', style: 'cancel' }, { text: 'Cancel', style: 'destructive', onPress: () => reservation.cancelReservation(item.id) }])}><Text style={[styles.cancelText, { color: colors.danger }]}>Cancel reservation</Text></Pressable> : null}
+            <Text style={[styles.reservationMeta, { color: colors.secondaryText }]}>{item.partySize} guests · Table {item.tableLabel} · {item.id}</Text>
+            {/* ===== CANCEL RESERVATION BUTTON ===== */}
+            {!['Cancelled', 'Declined'].includes(item.status) ? <Pressable onPress={() => Alert.alert('Cancel reservation?', 'This will release your table.', [{ text: 'Keep', style: 'cancel' }, { text: 'Cancel', style: 'destructive', onPress: () => reservation.cancelReservation(item.id).catch(error => Alert.alert('Cancellation failed', error.message)) }])}><Text style={[styles.cancelText, { color: colors.danger }]}>Cancel reservation</Text></Pressable> : null}
           </View>
         )) : <EmptyState icon='calendar-outline' title='No reservations yet' message='Your upcoming table bookings will appear here.' />}
         </ScrollView>
@@ -147,7 +174,8 @@ export default function ReservationScreen() {
             <Text style={[styles.modalTitle, { color: colors.text }]}>Confirm at {BRAND_SHORT_NAME}</Text>
             <Text style={[styles.modalText, { color: colors.secondaryText }]}>Please review your booking before it is saved.</Text>
             <Text style={[styles.bookingSummary, { color: colors.text }]}>{confirmation?.customerName}{'\n'}{confirmation?.date} at {confirmation?.time}{'\n'}{confirmation?.partySize} guests · {confirmation?.tableName}{'\n'}{confirmation?.phone}</Text>
-            <ScalePressable onPress={confirmReservation} style={[styles.modalButton, { backgroundColor: colors.primary }]}><Text style={styles.reserveText}>Confirm</Text></ScalePressable>
+            {/* ===== CONFIRM RESERVATION BUTTON ===== */}
+            <ScalePressable disabled={isSubmitting} onPress={confirmReservation} style={[styles.modalButton, { backgroundColor: colors.primary }]}>{isSubmitting ? <ActivityIndicator color='#FFFFFF' /> : <Text style={styles.reserveText}>Confirm</Text>}</ScalePressable>
             <Pressable onPress={() => setConfirmation(null)} style={styles.modalCancelButton}><Text style={[styles.modalCancelText, { color: colors.secondaryText }]}>Keep editing</Text></Pressable>
           </Animated.View>
         </View>
@@ -156,6 +184,7 @@ export default function ReservationScreen() {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   flex: { flex: 1 },

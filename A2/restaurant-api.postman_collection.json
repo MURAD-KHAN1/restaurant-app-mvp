@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Restaurant API - Assignment 2 Question 4",
-    "description": "Prepared importable collection, not a record of a manual Postman export. Run requests in order. GET all captures menuItemId; POST captures createdMenuItemId. PUT and DELETE affect only that new demo item. No authentication for Q4.",
+    "name": "Restaurant API - Assignment 2 Questions 4, 5 and 7",
+    "description": "Q4 menu and Q5 authentication. Seed demo users, run Q5 customer/manager logins to capture tokens before Q4 mutations. Menu GET stays public; writes require a manager. Tokens are populated from actual login responses. Q7 adds server-priced orders, protected manager progression, table availability, customer bookings and conflict/status tests; run its folder sequentially after seed.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -20,486 +20,1991 @@
     {
       "key": "missingMenuItemId",
       "value": "000000000000000000000000"
+    },
+    {
+      "key": "customerToken",
+      "value": ""
+    },
+    {
+      "key": "managerToken",
+      "value": ""
+    },
+    {
+      "key": "registrationEmail",
+      "value": "q5-test@example.com"
+    },
+    {
+      "key": "q5MenuItemId",
+      "value": ""
+    },
+    {
+      "key": "q7MenuId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7UnavailableId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7OrderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7TableId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7Date",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7ReservationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "q7DeclineId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
-      "name": "GET all menu - success screenshot",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu"
-      },
-      "event": [
+      "name": "Question 4 Menu API",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "const items = pm.response.json();",
-              "pm.test(\"Menu array\", () => pm.expect(items).to.be.an(\"array\"));",
-              "if (items.length) pm.collectionVariables.set(\"menuItemId\", items[0]._id);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET category filter",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu?category=Mains"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Only Mains\", () => pm.expect(pm.response.json().every(item => item.category === \"Mains\")).to.be.true);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET search",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu?search=burger"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Burger name match\", () => pm.expect(pm.response.json().every(item => /burger/i.test(item.name))).to.be.true);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET uppercase search",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu?search=BURGER"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET combined filters",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu?category=Mains&search=burger"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET one menu item",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/{{menuItemId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "POST menu item",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Q4 Postman Demo Burger\",\n  \"description\": \"Temporary item for Q4 CRUD verification\",\n  \"category\": \"Mains\",\n  \"price\": 850,\n  \"available\": true,\n  \"isSpecial\": false\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "01 GET All Menu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const items = pm.response.json();",
+                  "pm.test(\"Menu array\", () => pm.expect(items).to.be.an(\"array\"));",
+                  "if (items.length) pm.collectionVariables.set(\"menuItemId\", items[0]._id);"
+                ]
+              }
             }
-          }
-        }
-      },
-      "event": [
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 201\", function () { pm.response.to.have.status(201); });",
-              "if (pm.response.code === 201) pm.collectionVariables.set(\"createdMenuItemId\", pm.response.json()._id);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "PUT menu item",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"price\": 900,\n  \"isSpecial\": true\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "02 GET Menu Category Filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu?category=Mains"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Only Mains\", () => pm.expect(pm.response.json().every(item => item.category === \"Mains\")).to.be.true);"
+                ]
+              }
             }
-          }
-        }
-      },
-      "event": [
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Price updated\", () => pm.expect(pm.response.json().price).to.equal(900));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "PUT negative price - failure",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"price\": -100\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "03 GET Menu Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu?search=burger"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Burger name match\", () => pm.expect(pm.response.json().every(item => /burger/i.test(item.name))).to.be.true);"
+                ]
+              }
             }
-          }
-        }
-      },
-      "event": [
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "DELETE menu item",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Deletion confirmed\", () => pm.expect(pm.response.json().message).to.equal(\"Menu item deleted successfully\"));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "POST missing name - failure",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"category\": \"Mains\",\n  \"price\": 500\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "04 GET Menu By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/{{menuItemId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  ""
+                ]
+              }
             }
-          }
-        }
-      },
-      "event": [
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "POST negative price - failure screenshot",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Invalid Dish\",\n  \"category\": \"Mains\",\n  \"price\": -100\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "05 POST Add Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q4 Postman Demo Burger\",\n  \"description\": \"Temporary item for Q4 CRUD verification\",\n  \"category\": \"Mains\",\n  \"price\": 850,\n  \"available\": true,\n  \"isSpecial\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
             }
-          }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET wrong ID - failure",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/not-a-valid-id"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET nonexistent item - failure",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "PUT wrong ID - failure",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu/not-a-valid-id",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"price\": 900\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"createdMenuItemId\", pm.response.json()._id);"
+                ]
+              }
             }
-          }
-        }
-      },
-      "event": [
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "PUT nonexistent item - failure",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"price\": 900\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "06 PUT Update Menu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 900,\n  \"isSpecial\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
             }
-          }
-        }
-      },
-      "event": [
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Price updated\", () => pm.expect(pm.response.json().price).to.equal(900));"
+                ]
+              }
+            }
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
-              ""
-            ]
-          }
+          "name": "07 DELETE Menu",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/{{createdMenuItemId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Deletion confirmed\", () => pm.expect(pm.response.json().message).to.equal(\"Menu item deleted successfully\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 FAIL Missing Name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Mains\",\n  \"price\": 500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 FAIL Negative Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Dish\",\n  \"category\": \"Mains\",\n  \"price\": -100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 FAIL Invalid MongoDB ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/not-a-valid-id"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 FAIL Valid But Missing ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 GET Uppercase Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu?search=BURGER"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 GET Combined Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu?category=Mains&search=burger"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 FAIL Update Negative Price",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu/{{menuItemId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": -100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15 FAIL Update Invalid ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu/not-a-valid-id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16 FAIL Update Missing ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "17 FAIL Delete Invalid ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/not-a-valid-id",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "18 FAIL Delete Missing ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  ""
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "DELETE wrong ID - failure",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/not-a-valid-id"
-      },
-      "event": [
+      "name": "Question 5 Auth and Protected Routes",
+      "description": "Run seeded logins first to store tokens. Requests 07-09 are screenshot cases. Request 11 removes only the new Q5 menu item. Registration creates a test customer; repeated folder runs use a new test email.",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 400\", function () { pm.response.to.have.status(400); });",
-              ""
-            ]
-          }
+          "name": "01 Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Test Customer\",\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('registrationEmail', 'q5-test-' + Date.now() + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Customer role', () => pm.expect(pm.response.json().user.role).to.equal('customer'));",
+                  "pm.test('Password omitted', () => pm.expect('password' in pm.response.json().user).to.equal(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 FAIL Duplicate Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Test Customer\",\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Login Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('customerToken', pm.response.json().token);",
+                  "pm.test('Password omitted', () => pm.expect('password' in pm.response.json().user).to.equal(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Login Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"Manager123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('managerToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 FAIL Wrong Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"WrongPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 GET Menu Public",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 FAIL Add Menu No Token - 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Test Burger\",\n  \"description\": \"Q5 authentication test item\",\n  \"category\": \"Mains\",\n  \"price\": 700,\n  \"available\": true,\n  \"isSpecial\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 FAIL Add Menu Customer Token - 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Test Burger\",\n  \"description\": \"Q5 authentication test item\",\n  \"category\": \"Mains\",\n  \"price\": 700,\n  \"available\": true,\n  \"isSpecial\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 Add Menu Manager Token - 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Test Burger\",\n  \"description\": \"Q5 authentication test item\",\n  \"category\": \"Mains\",\n  \"price\": 700,\n  \"available\": true,\n  \"isSpecial\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('q5MenuItemId', pm.response.json()._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 PUT Menu Manager",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu/{{q5MenuItemId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 750\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 DELETE Q5 Test Menu",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu/{{q5MenuItemId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 FAIL Public Manager Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q5 Role Test\",\n  \"email\": \"role-test@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"manager\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 FAIL Missing Login Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "DELETE nonexistent item - failure",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/api/menu/{{missingMenuItemId}}"
-      },
-      "event": [
+      "name": "Question 7 Orders and Reservations",
+      "description": "Run in order after seed. JWTs and document IDs captured at runtime. The chosen table slot must be free; use a different future date/time if occupied. Requests create demo documents; do not run against a production database.",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 404\", function () { pm.response.to.have.status(404); });",
-              ""
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "GET health",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/health"
-      },
-      "event": [
+          "name": "01 Customer Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('customerToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Expected HTTP 200\", function () { pm.response.to.have.status(200); });",
-              ""
-            ]
-          }
+          "name": "02 Manager Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"Manager123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('managerToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Menu IDs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/menu",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json(); pm.collectionVariables.set('q7MenuId', items.find(i => i.available)._id); pm.collectionVariables.set('q7UnavailableId', items.find(i => !i.available)._id);",
+                  "pm.collectionVariables.set('q7Date', new Date(Date.now()+3*86400000).toISOString().slice(0,10));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Place Order (tampered total ignored)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"menuItem\": \"{{q7MenuId}}\",\n      \"quantity\": 2,\n      \"note\": \"No chilli\",\n      \"price\": 1\n    }\n  ],\n  \"orderType\": \"Takeaway\",\n  \"pickupTime\": \"15 minutes\",\n  \"total\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', () => pm.response.to.have.status(201));",
+                  "const o=pm.response.json(); pm.collectionVariables.set('q7OrderId', o._id); pm.test('Database price and total used', () => { pm.expect(o.total).to.equal(Math.round((o.subtotal+o.serviceCharge+o.salesTax-o.discount)*100)/100); pm.expect(o.status).to.equal('Pending'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/my",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Manager Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Preparing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{q7OrderId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Preparing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 Ready",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{q7OrderId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Ready\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 FAIL Reverse Transition",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{q7OrderId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Preparing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 FAIL Unavailable Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"menuItem\": \"{{q7UnavailableId}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"orderType\": \"Takeaway\",\n  \"pickupTime\": \"15 minutes\",\n  \"total\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 Available Tables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/tables?date={{q7Date}}&time=16%3A00&partySize=2",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('q7TableId', pm.response.json()[0]._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 Create Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"table\": \"{{q7TableId}}\",\n  \"date\": \"{{q7Date}}\",\n  \"time\": \"16:00\",\n  \"partySize\": 2,\n  \"phone\": \"0300-1234567\",\n  \"customerName\": \"Postman Q7 Guest\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('q7ReservationId', pm.response.json()._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 FAIL Duplicate Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"table\": \"{{q7TableId}}\",\n  \"date\": \"{{q7Date}}\",\n  \"time\": \"16:00\",\n  \"partySize\": 2,\n  \"phone\": \"0300-1234567\",\n  \"customerName\": \"Postman Q7 Guest\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 My Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations/my",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15 Manager Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16 Accept Reservation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations/{{q7ReservationId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Accepted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "17 Second Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"table\": \"{{q7TableId}}\",\n  \"date\": \"{{q7Date}}\",\n  \"time\": \"17:00\",\n  \"partySize\": 2,\n  \"phone\": \"0300-1234567\",\n  \"customerName\": \"Postman Q7 Guest\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('q7DeclineId', pm.response.json()._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "18 Decline Reservation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations/{{q7DeclineId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Declined\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 Cancel Own Accepted Reservation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservations/{{q7ReservationId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Cancelled\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "20 Served",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{q7OrderId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{managerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Served\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "21 FAIL Customer Manager Access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "22 FAIL Missing JWT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/my",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

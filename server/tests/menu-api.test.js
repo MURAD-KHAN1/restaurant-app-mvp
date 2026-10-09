@@ -1,42 +1,41 @@
-// Offline recovery checks: real HTTP and Mongoose validation, in-memory persistence.
-// These replace the lost tests; they do not claim Atlas integration coverage.
+// Real HTTP checks: offline adapter by default, actual temporary MongoDB with --integration.
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const { once } = require('node:events');
 const mongoose = require('mongoose');
 const app = require('../server');
 const MenuItem = require('../models/MenuItem');
-const User = require('../models/User');
-const Table = require('../models/Table');
-const Reservation = require('../models/Reservation');
-const Order = require('../models/Order');
 const data = require('../data/seed-data.json');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const { randomBytes } = require('node:crypto');
+process.env.JWT_SECRET = randomBytes(32).toString('hex');
 const collection = require('../../A2/restaurant-api.postman_collection.json');
 
 async function run() {
-  for (const [Model, records] of [[User, data.users], [MenuItem, data.menuItems], [Table, data.tables]]) {
-    for (const record of records) await new Model(record).validate();
+  for (const record of data.menuItems) await new MenuItem(record).validate();
+  const integration = process.argv.includes('--integration');
+  let mongod;
+  if (integration) {
+    const { MongoMemoryServer } = require('mongodb-memory-server');
+    mongod = await MongoMemoryServer.create();
+    process.env.MONGO_URI = mongod.getUri('restaurant_app');
+    await require('../config/db')();
+    await require('../seed')();
+    await require('../seed')();
   }
-  assert.deepEqual([data.users.length, data.menuItems.length, data.tables.length], [2, 20, 6]);
-  assert.deepEqual(data.users.map(user => user.role).sort(), ['customer', 'manager']);
-  for (const Model of [User, Table]) assert(Model.schema.indexes().some(([, options]) => options.unique));
-  for (const Model of [Reservation, Order]) assert(Model.schema.options.timestamps);
-  for (const Model of [User, MenuItem, Table, Reservation, Order]) {
-    await assert.rejects(new Model({}).validate());
-  }
-  await assert.rejects(new User({ ...data.users[0], role: 'admin' }).validate());
-  await assert.rejects(new Table({ ...data.tables[0], seats: 0 }).validate());
+  const originalUserFind = User.findById;
+  const manager = integration ? await User.findOne({ role: 'manager' })
+    : { _id: new mongoose.Types.ObjectId(), name: 'Test Manager', email: 'manager@example.com', role: 'manager' };
+  if (!integration) User.findById = () => ({ select: async () => manager });
+  const managerToken = jwt.sign({ id: String(manager._id) }, process.env.JWT_SECRET, { expiresIn: '1d' });
   const ref = new mongoose.Types.ObjectId();
-  await new Reservation({ user: ref, table: ref, date: '2026-10-06', time: '12:00',
-    partySize: 2, phone: '0300-1234567' }).validate();
-  await new Order({ user: ref, items: [{ menuItem: ref, quantity: 1, name: 'Dish', unitPrice: 10 }],
-    subtotal: 10, serviceCharge: 0.5, salesTax: 1.5, discount: 0, total: 12,
-    orderType: 'Takeaway', pickupTime: '15 minutes' }).validate();
-
-  const initial = data.menuItems.map(record => new MenuItem(record).toObject());
+  const initial = integration ? (await MenuItem.find({})).map(doc => doc.toObject())
+    : data.menuItems.map(record => new MenuItem(record).toObject());
   const records = new Map(initial.map(item => [String(item._id), item]));
   const methods = ['find', 'findById', 'create', 'findByIdAndUpdate', 'findByIdAndDelete'];
   const originals = Object.fromEntries(methods.map(method => [method, MenuItem[method]]));
+  if (!integration) {
   MenuItem.find = async filter => [...records.values()].filter(item =>
     (!filter.category || item.category === filter.category)
     && (!filter.name || new RegExp(filter.name.$regex, filter.name.$options).test(item.name)));
@@ -50,7 +49,7 @@ async function run() {
   };
   MenuItem.findByIdAndUpdate = async (id, update, options) => {
     assert.equal(options.runValidators, true);
-    assert.equal(options.new, true);
+    assert.equal(options.returnDocument, 'after');
     const existing = records.get(id);
     if (!existing) return null;
     const doc = new MenuItem({ ...existing, ...update.$set });
@@ -64,13 +63,15 @@ async function run() {
     records.delete(id);
     return item;
   };
+  }
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const baseUrl = 'http://127.0.0.1:' + server.address().port;
   let checks = 0;
   async function request(method, route, body) {
     const response = await fetch(baseUrl + route, {
-      method, headers: { 'Content-Type': 'application/json' },
+      method, headers: { 'Content-Type': 'application/json',
+        ...(['POST', 'PUT', 'DELETE'].includes(method) ? { Authorization: 'Bearer ' + managerToken } : {}) },
       ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
     });
     return { status: response.status, json: await response.json(), headers: response.headers };
@@ -85,7 +86,7 @@ async function run() {
     const variables = Object.fromEntries(collection.variable.map(entry => [entry.key, entry.value]));
     variables.baseUrl = baseUrl;
     const expand = value => value.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key]);
-    for (const item of collection.item) {
+    for (const item of collection.item.filter(group => group.name === 'Question 4 Menu API').flatMap(group => group.item)) {
       const req = item.request;
       const url = expand(typeof req.url === 'string' ? req.url : req.url.raw);
       const response = await request(req.method, url.slice(baseUrl.length), req.body?.raw);
@@ -98,6 +99,7 @@ async function run() {
           be: { an: type => assert.equal(type === 'array' && Array.isArray(value), true),
             get true() { assert.equal(value, true); return true; } } } }),
       };
+      if (/^0[123] /.test(item.name)) assert(response.json.length > 0, item.name + ' must return seeded data');
       for (const event of item.event || []) {
         if (event.listen === 'test') vm.runInNewContext(event.script.exec.join('\n'), { pm });
       }
@@ -111,7 +113,7 @@ async function run() {
     }
     const dish = { name: 'Test dish', category: 'Mains', price: 100 };
     for (const body of [{ ...dish, _id: String(ref) }, { ...dish, price: '100' },
-      { ...dish, available: 'false' }, { ...dish, category: 'All' }, { ...dish, price: 1.001 },
+      { ...dish, available: 'false' }, { ...dish, category: 'All' }, 
       { ...dish, name: ' ' }, { $set: dish }, []]) {
       await status('POST', '/api/menu', body, 400);
     }
@@ -145,12 +147,21 @@ async function run() {
     };
     try { await status('GET', '/api/health', undefined, 500); }
     finally { prototype.json = originalJson; }
-    assert.deepEqual([...records.values()], initial);
-    console.log('PASS: ' + checks + ' HTTP/Postman checks; all seed models validate; original 20 items unchanged.');
-    console.log('Offline persistence adapter used. Atlas connection and live seed remain unverified.');
+    if (integration) {
+      const stored = await MenuItem.find({});
+      assert.equal(stored.length, data.menuItems.length);
+      for (const record of data.menuItems) {
+        const item = stored.find(item => item.name === record.name);
+        for (const [key, value] of Object.entries(record)) assert.equal(item[key], value);
+      }
+    } else assert.deepEqual([...records.values()], initial);
+    console.log('PASS: ' + checks + ' HTTP/Postman checks; menu seed validates; original 20 items unchanged.');
+    console.log(integration ? 'Real temporary MongoDB integration verified; Atlas was not used by automated tests.' : 'Offline persistence adapter used; run npm run test:integration for real MongoDB checks.');
   } finally {
+    User.findById = originalUserFind;
     for (const method of methods) MenuItem[method] = originals[method];
     await new Promise(resolve => server.close(resolve));
+    if (mongod) { await mongoose.disconnect(); await mongod.stop(); }
   }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

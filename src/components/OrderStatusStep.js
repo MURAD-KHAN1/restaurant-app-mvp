@@ -1,27 +1,38 @@
+// ==================================================
+// FILE: OrderStatusStep.js
+// PURPOSE: Shows one step in the order tracker
+// VIVA: Props: label, icon, isComplete, isCurrent and isLast control the step
+// ==================================================
+
+// ===== IMPORTS =====
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
+// ===== COMPONENT PROPS: OrderStatusStep =====
 export default function OrderStatusStep({ label, icon, isComplete, isCurrent, isLast }) {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const active = isComplete || isCurrent;
+  // ===== LOCAL STATE =====
   const [markerScale] = useState(() => new Animated.Value(active ? 0.75 : 1));
 
   useEffect(() => {
     if (!active) return undefined;
     markerScale.setValue(0.75);
     const animation = Animated.sequence([
-      Animated.spring(markerScale, { toValue: 1, damping: 10, stiffness: 220, useNativeDriver: true }),
+      Animated.spring(markerScale, { toValue: 1, damping: 10, stiffness: 220, useNativeDriver: Platform.OS !== 'web' }),
       ...(isCurrent ? [
-        Animated.spring(markerScale, { toValue: 1.12, damping: 9, stiffness: 240, useNativeDriver: true }),
-        Animated.spring(markerScale, { toValue: 1, damping: 11, stiffness: 240, useNativeDriver: true }),
+        Animated.spring(markerScale, { toValue: 1.12, damping: 9, stiffness: 240, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.spring(markerScale, { toValue: 1, damping: 11, stiffness: 240, useNativeDriver: Platform.OS !== 'web' }),
       ] : []),
     ]);
     animation.start();
     return () => animation.stop();
   }, [active, isCurrent, markerScale]);
 
+  // ===== MAIN DISPLAY =====
   return (
     <View style={styles.row}>
       <View style={styles.markerColumn}>
@@ -38,6 +49,7 @@ export default function OrderStatusStep({ label, icon, isComplete, isCurrent, is
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', minHeight: 70 },
   markerColumn: { width: 48, alignItems: 'center' },

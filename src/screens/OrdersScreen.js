@@ -1,5 +1,13 @@
+import { useIsFocused } from '@react-navigation/native';
+// ==================================================
+// FILE: OrdersScreen.js
+// PURPOSE: Shows customer orders and tracking
+// VIVA: Edit order cards, details, status display and elapsed time here
+// ==================================================
+
+// ===== IMPORTS =====
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EmptyState from '../components/EmptyState';
 import { FadeSlideView } from '../components/Motion';
@@ -24,40 +32,57 @@ function formatElapsed(timestamp, now) {
 }
 
 export default function OrdersScreen() {
+  // ===== GET SHARED DATA =====
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { orders } = useOrders();
+  const { orders, loading, error, refetchOrders } = useOrders();
+  const isFocused = useIsFocused();
+  // ===== LOCAL STATE =====
   const [now, setNow] = useState(() => Date.now());
-  const myOrders = useMemo(() => orders.filter((order) => order.customerEmail === user.email), [orders, user.email]);
-  const hasActiveOrders = useMemo(() => myOrders.some((order) => order.status !== 'Served'), [myOrders]);
+  // ===== CURRENT CUSTOMER ORDER LIST =====
+  const myOrders = useMemo(() => orders.filter((order) => order.customerEmail === user?.email), [orders, user?.email]);
 
+  // Poll the server every 10 seconds; no customer-side status transitions.
   useEffect(() => {
-    if (!hasActiveOrders) return undefined;
-    const intervalId = setInterval(() => setNow(Date.now()), 1000);
+    if (!isFocused) return undefined;
+    refetchOrders().catch(() => {});
+    const intervalId = setInterval(() => {
+      setNow(Date.now());
+      refetchOrders().catch(() => {});
+    }, 10000);
     return () => clearInterval(intervalId);
-  }, [hasActiveOrders]);
+  }, [isFocused, refetchOrders]);
 
+  // ===== MAIN DISPLAY =====
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FadeSlideView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refetchOrders().catch(() => {})} tintColor={colors.primary} />}>
         <View style={styles.heading}>
           <Text style={[styles.title, { color: colors.text }]}>Your orders</Text>
-          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{BRAND_SHORT_NAME} live tracking: Preparing at 10s, Ready at 20s, Served at 30s.</Text>
+          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{BRAND_SHORT_NAME} server status refreshes every 10 seconds.</Text>
         </View>
+        <Pressable accessibilityLabel='Refresh orders' onPress={() => refetchOrders().catch(() => {})}><Text style={{ color: colors.primary }}>Refresh orders</Text></Pressable>
+        {loading && !myOrders.length ? <ActivityIndicator color={colors.primary} /> : null}
+        {error ? <EmptyState icon='alert-circle-outline' title='Unable to load orders' message={error} actionLabel='Retry' onAction={() => refetchOrders().catch(() => {})} /> : null}
+        {/* ===== ORDER LIST / EMPTY ORDERS ===== */}
         {!myOrders.length ? <EmptyState icon='receipt-outline' title='No orders yet' message='Place an order from your cart and track it here in real time.' /> : myOrders.map((order, index) => {
           const activeIndex = STEPS.findIndex((step) => step.label === order.status);
+          // ===== ORDER CARD =====
           return (
             <FadeSlideView key={order.id} delay={Math.min(index, 6) * 70} style={[styles.orderCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
+              {/* ===== ORDER STATUS AND ELAPSED TIME ===== */}
               <View style={styles.orderTop}>
                 <View><Text style={[styles.orderId, { color: colors.text }]}>{order.id}</Text><Text style={[styles.orderTime, { color: colors.secondaryText }]}>Elapsed {formatElapsed(order.timestamp, now)}</Text></View>
                 <View style={[styles.statusBadge, { backgroundColor: colors.surfaceMuted }]}><View style={[styles.statusDot, { backgroundColor: order.status === 'Served' ? colors.success : colors.primary }]} /><Text style={[styles.statusText, { color: colors.text }]}>{order.status}</Text></View>
               </View>
               <Text style={[styles.orderType, { color: colors.primary }]}>{order.type ?? 'Dine-in'} · {(order.type ?? 'Dine-in') === 'Dine-in' ? `Table ${order.table ?? 'not selected'}` : `Pickup in ${order.pickupTime}`}</Text>
+              {/* ===== ORDER DETAILS ===== */}
               <View style={styles.itemsBox}>
                 {order.items.map((item) => <Text key={item.id} style={[styles.itemText, { color: colors.secondaryText }]}>{item.quantity} × {item.name}</Text>)}
               </View>
               <View style={[styles.totalStrip, { borderColor: colors.border }]}><Text style={[styles.totalLabel, { color: colors.secondaryText }]}>Total</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{formatCurrency(order.total ?? order.totals?.grandTotal ?? 0)}</Text></View>
+              {/* ===== ORDER STATUS STEPS ===== */}
               <View style={styles.tracker}>
                 {STEPS.map((step, index) => <OrderStatusStep key={step.label} label={step.label} icon={step.icon} isComplete={index < activeIndex} isCurrent={index === activeIndex} isLast={index === STEPS.length - 1} />)}
               </View>
@@ -70,6 +95,7 @@ export default function OrdersScreen() {
   );
 }
 
+// ===== SCREEN DESIGN / STYLES =====
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   flex: { flex: 1 },
