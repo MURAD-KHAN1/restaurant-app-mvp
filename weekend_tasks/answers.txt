@@ -1,0 +1,262 @@
+====================================================================
+WEEKEND PRACTICE TASKS - WRITTEN & PREDICT ANSWERS (answers.txt)
+====================================================================
+
+--------------------------------------------------------------------
+TASK 2: React Native Button onPress Mistake
+--------------------------------------------------------------------
+Explanation:
+Writing `onPress={placeOrder(cart)}` calls `placeOrder(cart)` immediately while the component is rendering instead of waiting for the user to tap the button. Its return value (often `undefined` or a Promise) is then passed to `onPress`, which can trigger unwanted API requests or state updates on every render (potentially causing an infinite re-render loop) and leaves nothing to execute when the button is actually pressed.
+
+Corrected Line:
+<Button title="Order" onPress={() => placeOrder(cart)} />
+
+--------------------------------------------------------------------
+TASK 5: Array.prototype.find Result for "m99"
+--------------------------------------------------------------------
+- `menu.find((item) => item._id === "m5")` returns:
+  `{ _id: 'm5', name: 'Mutton Pulao', price: 2200, category: 'Mains', available: true }`
+- `menu.find((item) => item._id === "m99")` returns:
+  `undefined` (because no element in `menu` matches `_id === "m99"`).
+
+--------------------------------------------------------------------
+TASK 6: Step-by-Step Cart Total Calculation by Hand
+--------------------------------------------------------------------
+Starter Cart:
+1. `{ menuItem: "m1", price: 1450, qty: 2 }`
+2. `{ menuItem: "m3", price: 150,  qty: 3 }`
+3. `{ menuItem: "m4", price: 60,   qty: 4 }`
+
+Hand Calculation Steps (`reduce` starting with `initialValue = 0`):
+- Initial state: `sum = 0`
+- Step 1 (Item 1 - m1): `1450 * 2 = 2900` -> `sum = 0 + 2900 = 2900`
+- Step 2 (Item 2 - m3): `150 * 3 = 450`   -> `sum = 2900 + 450 = 3350`
+- Step 3 (Item 3 - m4): `60 * 4 = 240`    -> `sum = 3350 + 240 = 3590`
+- Cart Subtotal = `3590`
+- Adding 16% Tax (`addTax(3590)` = `3590 * 1.16`):
+  Final Amount = `4164.4` (Rs. 4164.4)
+
+--------------------------------------------------------------------
+TASK 7: Optional Chaining Error & Nullish Coalescing (?? vs ||)
+--------------------------------------------------------------------
+1. Accessing `user.address?.city` vs `user.address.city`:
+   - `user.address?.city` safely short-circuits and prints `undefined` because `user.address` is `null`.
+   - Removing `?.` (`user.address.city`) throws the exact error:
+     `TypeError: Cannot read properties of null (reading 'city')`
+
+2. Predictions & Checked Output for `const line = { qty: 0 };`:
+   - `console.log(line.qty ?? 1);`      -> `0` (because `0` is neither `null` nor `undefined`, so `??` keeps `0`)
+   - `console.log(line.qty || 1);`      -> `1` (because `0` is falsy, so `||` falls back to `1`)
+   - `console.log(line.note ?? "none");`-> `"none"` (because `line.note` is `undefined`)
+   - `console.log(line.note || "none");`-> `"none"` (because `line.note` is `undefined`, which is falsy)
+
+--------------------------------------------------------------------
+TASK 8: Equality & Truthiness Predictions + Empty Cart Check
+--------------------------------------------------------------------
+Predictions & Verified Outputs:
+1. `0 == "0"`          -> `true`  (loose equality converts `"0"` to number `0`)
+2. `0 === "0"`         -> `false` (strict equality checks type: number vs string)
+3. `null == undefined` -> `true`  (loose equality treats `null` and `undefined` as equal to each other)
+4. `null === undefined`-> `false` (different types)
+5. `"" == 0`           -> `true`  (empty string converts to `0` in loose comparison)
+6. `Boolean([])`       -> `true`  (all objects/arrays, even empty arrays, are truthy in JavaScript)
+7. `Boolean("")`       -> `false` (empty string is falsy)
+8. `Boolean("0")`      -> `true`  (any non-empty string is truthy)
+9. `Boolean(NaN)`      -> `false` (`NaN` is falsy)
+
+Why `if (cart)` is NOT a correct empty check (in one line):
+In JavaScript, an empty array `[]` is an object and always evaluates to `true` (truthy), so `if (cart)` is true even when `cart.length === 0`.
+
+--------------------------------------------------------------------
+TASK 9: ES Modules Import Syntax
+--------------------------------------------------------------------
+1. Single import line for `export const BASE_URL`, `export async function request()`, and `export default function useApi()`:
+   `import useApi, { BASE_URL, request } from "./client";`
+
+2. Which of `import useApi from "./client"` or `import { useApi } from "./client"` is wrong and why:
+   `import { useApi } from "./client"` is wrong because `useApi` was exported with `export default`, and default exports must be imported without curly braces (`import useApi from "./client"`), whereas curly braces are only for named exports.
+
+--------------------------------------------------------------------
+TASK 10: JSON.stringify and JSON.parse Behavior
+--------------------------------------------------------------------
+Given object:
+`{ tableNo: 4, items: [{ menuItem: "m1", qty: 2 }], note: undefined, print: () => "hello", createdAt: new Date("2026-10-14T09:00:00Z") }`
+
+1. Stringified JSON output:
+   `{"tableNo":4,"items":[{"menuItem":"m1","qty":2}],"createdAt":"2026-10-14T09:00:00.000Z"}`
+
+2. Logged values after `const back = JSON.parse(...)`:
+   - `typeof back.createdAt` -> `"string"`
+   - `back.items[0].qty`     -> `2`
+
+3. What happened to each key during `JSON.stringify` / `JSON.parse`:
+   - `tableNo`: Preserved as a number (`4`).
+   - `items`: Preserved as an array of objects (`[{ menuItem: "m1", qty: 2 }]`).
+   - `note`: Completely omitted/dropped because `JSON.stringify` ignores object properties with `undefined` values.
+   - `print`: Completely omitted/dropped because functions are not valid JSON data types.
+   - `createdAt`: Converted from a `Date` object into an ISO 8601 string (`"2026-10-14T09:00:00.000Z"`), and `JSON.parse` keeps it as a `"string"` rather than turning it back into a `Date` instance.
+
+4. Why `JSON.parse("{name: 'Raita'}")` fails:
+   Strict JSON specification requires all object keys (property names) and string values to be enclosed in double quotes (`"`). Unquoted keys (`name`) and single-quoted strings (`'Raita'`) throw a `SyntaxError`.
+   Working version: `JSON.parse('{"name": "Raita"}')`
+
+--------------------------------------------------------------------
+TASK 11: Event Loop Order & Slow Operations in Assignment 2
+--------------------------------------------------------------------
+1. Predicted & Verified Console Output Order:
+   `A`, `D`, `F`, `C`, `E`, `B`
+   (Synchronous logs `A`, `D`, `F` run first on the call stack; then queued timer callbacks run in order of delay: `C` at 0ms, `E` at 500ms, and `B` at 1000ms.)
+
+2. Three slow operations in Assignment 2 that must be handled asynchronously:
+   1) Fetching/mutating data over the network between the React Native app and the Express server using `fetch` / `apiRequest` (e.g., loading `/api/menu`, `/api/orders`, `/api/reservations`).
+   2) Querying and writing documents in MongoDB via Mongoose (`MenuItem.find()`, `Order.create()`, `User.findOne()`).
+   3) Hashing and comparing passwords with `bcryptjs` (`bcrypt.hash()`, `bcrypt.compare()`) and reading/writing session tokens in `AsyncStorage` (`AsyncStorage.multiGet()`, `AsyncStorage.multiSet()`).
+
+--------------------------------------------------------------------
+TASK 14: Three Mistakes in `loadOrders()` and Corrected Code
+--------------------------------------------------------------------
+Original buggy code:
+```js
+function loadOrders() {
+  const res = await fetch(`${BASE_URL}/api/orders/my`);
+  const data = res.json();
+  setOrders(data);
+  setLoading(false);
+}
+```
+
+Three Mistakes:
+1. Using `await` inside a function that is not marked `async` (`function loadOrders()` instead of `async function loadOrders()`), which causes a `SyntaxError`.
+2. Missing `await` before `res.json()` (`res.json()` returns a Promise, so `data` would be a pending Promise instead of the parsed orders array), and missing the `Authorization: Bearer ${token}` header required by the protected `/api/orders/my` endpoint.
+3. No `try / catch / finally` (or `res.ok` error check), so if the network request fails or throws an error, the error is unhandled and `setLoading(false)` is never reached (leaving the loading spinner stuck forever).
+
+Corrected Code:
+```js
+async function loadOrders() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/orders/my`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      throw new Error(`Request failed with status ${res.status}`);
+    }
+    const data = await res.json();
+    setOrders(data);
+  } catch (error) {
+    console.error("Failed to load orders:", error.message);
+  } finally {
+    setLoading(false);
+  }
+}
+```
+
+--------------------------------------------------------------------
+TASK 15: Sequential `await` vs `Promise.all`
+--------------------------------------------------------------------
+- Sequential `await` time: ~5000 ms (2s + 3s)
+- Parallel `Promise.all` time: ~3000 ms (max(2s, 3s))
+One-sentence explanation:
+Sequential `await` waits for the 2-second menu request to finish before starting the 3-second orders request (~5 seconds total), whereas `Promise.all` starts both independent requests at the same time and finishes as soon as the slowest one completes (~3 seconds total).
+
+--------------------------------------------------------------------
+TASK 16: Uncleared `setInterval` on Screen Unmount
+--------------------------------------------------------------------
+One-line explanation:
+If the interval is never cleared when leaving the screen, it continues running in the background (causing a memory leak, wasted network requests, and state updates on an unmounted component).
+
+--------------------------------------------------------------------
+TASK 17: Raw HTTP Request & Response to Cancel Order `6701c4`
+--------------------------------------------------------------------
+=== HTTP REQUEST ===
+PATCH /api/orders/6701c4/status HTTP/1.1          <-- First Line: Method = PATCH, Path = /api/orders/6701c4/status
+Host: localhost:5000
+Content-Type: application/json                    <-- Header 1 (Request Header)
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...     <-- Header 2 (Request Header)
+
+{                                                 <-- Request Body (JSON)
+  "status": "Cancelled"
+}
+
+=== HTTP RESPONSE ===
+HTTP/1.1 200 OK                                   <-- Status Line: Status Code = 200 (OK)
+Content-Type: application/json                    <-- Response Header
+
+{                                                 <-- Response Body (JSON)
+  "_id": "6701c4",
+  "status": "Cancelled",
+  "message": "Order status updated to Cancelled"
+}
+
+--------------------------------------------------------------------
+TASK 18: Rewrite Non-REST Endpoints in Proper REST Style
+--------------------------------------------------------------------
+1. `GET /api/getMenu`
+   -> Method & Path: `GET /api/menu`
+   -> Success Status Code: `200 OK`
+
+2. `POST /api/deleteItem?id=m3`
+   -> Method & Path: `DELETE /api/menu/m3`
+   -> Success Status Code: `200 OK` (or `204 No Content`)
+
+3. `GET /api/updatePrice?id=m1&price=1600`
+   -> Method & Path: `PUT /api/menu/m1` (or `PATCH /api/menu/m1`) with JSON body `{ "price": 1600 }`
+   -> Success Status Code: `200 OK`
+
+4. `POST /api/getOrder/6701c4`
+   -> Method & Path: `GET /api/orders/6701c4`
+   -> Success Status Code: `200 OK`
+
+5. `GET /api/createReservation`
+   -> Method & Path: `POST /api/reservations` (with reservation details in JSON body)
+   -> Success Status Code: `201 Created`
+
+6. `POST /api/changeStatus?order=6701c4`
+   -> Method & Path: `PATCH /api/orders/6701c4/status` (with JSON body `{ "status": "..." }`)
+   -> Success Status Code: `200 OK`
+
+--------------------------------------------------------------------
+TASK 19: Express Route Patterns & Request Data Sources
+--------------------------------------------------------------------
+1. Request: `GET /api/menu/m5`
+   - Express Route Pattern: `app.get("/api/menu/:id", ...)` (or `router.get("/:id", ...)`)
+   - Where values come from: `id` (`"m5"`) comes from `req.params.id` (`req.params`).
+
+2. Request: `GET /api/menu?category=Sides&search=naan`
+   - Express Route Pattern: `app.get("/api/menu", ...)` (or `router.get("/", ...)`)
+   - Where values come from: `category` (`"Sides"`) and `search` (`"naan"`) come from `req.query.category` and `req.query.search` (`req.query`).
+
+3. Request: `PATCH /api/orders/6701c4/status` with body `{ "status": "Ready" }`
+   - Express Route Pattern: `app.patch("/api/orders/:id/status", ...)` (or `router.patch("/:id/status", ...)`)
+   - Where values come from: `id` (`"6701c4"`) comes from `req.params.id` (`req.params`), and `status` (`"Ready"`) comes from `req.body.status` (`req.body`).
+
+4. Request: `POST /api/reservations` with body `{ "tableNo": 3, "time": "19:00" }` and header `Authorization: Bearer abc123`
+   - Express Route Pattern: `app.post("/api/reservations", ...)` (or `router.post("/", ...)`)
+   - Where values come from: `tableNo` (`3`) and `time` (`"19:00"`) come from `req.body`, and `Authorization` (`"Bearer abc123"`) comes from `req.headers.authorization` (`req.headers` / `req.get("Authorization")`).
+
+--------------------------------------------------------------------
+TASK 20: HTTP Status Codes (12 Situations) & 4 Self-Check Questions
+--------------------------------------------------------------------
+Part A - Status Codes for 12 Situations:
+1. Customer views the menu (`GET /api/menu`)                        -> `200 OK`
+2. Manager adds a new dish (`POST /api/menu`)                       -> `201 Created`
+3. User registers with an email that already exists                 -> `409 Conflict`
+4. Customer sends an order with quantity `-2`                       -> `400 Bad Request`
+5. Request to `/api/orders/my` is sent without a JWT token          -> `401 Unauthorized`
+6. Logged-in Customer tries to delete a menu item (`DELETE /api/menu/:id`) -> `403 Forbidden`
+7. `GET /api/menu/m99` where dish `m99` does not exist              -> `404 Not Found`
+8. Customer tries to book Table 3 at a date/time already booked     -> `409 Conflict`
+9. Database crashes / MongoDB is unreachable during a request       -> `500 Internal Server Error`
+10. User tries to log in with the wrong password                    -> `401 Unauthorized`
+11. Manager updates order status from `Pending` to `Preparing`      -> `200 OK`
+12. Someone tries to change order status from `Delivered`/`Served` back to `Pending` -> `400 Bad Request`
+
+Part B - 4 Self-Check Explanations:
+1. `??` vs `||`:
+   `??` (nullish coalescing) only falls back to the right-hand side when the left-hand value is `null` or `undefined` (preserving valid falsy values like `0` or `""`), whereas `||` (logical OR) falls back on any falsy value (`0`, `""`, `false`, `NaN`, `null`, `undefined`).
+2. `==` vs `===`:
+   `==` (loose equality) performs type coercion before comparing values (so `0 == "0"` is `true`), whereas `===` (strict equality) compares both value and data type without coercion (so `0 === "0"` is `false`).
+3. `req.params` vs `req.query`:
+   `req.params` captures named route segments defined in the URL path pattern (like `:id` in `/api/menu/m5`), whereas `req.query` captures optional key-value filter/search parameters after the `?` in the URL (like `?category=Mains&search=karahi`).
+4. `401` vs `403`:
+   `401 Unauthorized` means the request lacks valid authentication credentials (missing, invalid, or expired JWT token — "who are you?"), whereas `403 Forbidden` means the user is authenticated, but their role lacks permission to perform the action (e.g., a logged-in customer trying to access a manager-only route).
+

@@ -1,6 +1,6 @@
 // Edit the LAN address here, or set EXPO_PUBLIC_API_URL before starting Expo.
 // Physical phones and web clients use the same server; Android emulator may use 10.0.2.2.
-export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.18.124:5000/api').replace(/\/+$/, '');
+export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.9:5000/api').replace(/\/+$/, '');
 export class ApiError extends Error {
   constructor(message, status = 0) { super(message); this.name = 'ApiError'; this.status = status; }
 }
