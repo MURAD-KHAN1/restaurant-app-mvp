@@ -1,4 +1,3 @@
-// Task 13: Rewrite Task 12 using async/await and try/catch/finally
 const { menu } = require("./data");
 
 function getMenu(shouldFail) {
@@ -30,4 +29,3 @@ async function run() {
 }
 
 run();
-

@@ -1,4 +1,3 @@
-// Task 16: Polling with setInterval and stopping with clearInterval
 let count = 0;
 
 const intervalId = setInterval(() => {
@@ -9,4 +8,3 @@ const intervalId = setInterval(() => {
     console.log("Order Ready");
   }
 }, 2000);
-

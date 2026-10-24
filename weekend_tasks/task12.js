@@ -1,4 +1,3 @@
-// Task 12: Promise creation and consumption with .then, .catch, .finally
 const { menu } = require("./data");
 
 function getMenu(shouldFail) {
@@ -13,7 +12,6 @@ function getMenu(shouldFail) {
   });
 }
 
-// Call once with false (resolves) and once with true (rejects)
 getMenu(false)
   .then((items) => {
     console.log("Dish count:", items.length);
@@ -35,4 +33,3 @@ getMenu(true)
   .finally(() => {
     console.log("Hide spinner");
   });
-

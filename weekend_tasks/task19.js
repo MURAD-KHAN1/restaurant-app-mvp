@@ -1,4 +1,3 @@
-// Task 19: Fake Express req object for PATCH /api/orders/6701c4/status
 const req = {
   params: { id: "6701c4" },
   query: {},
@@ -11,4 +10,3 @@ const { status } = req.body;
 
 console.log("Order ID (from req.params):", id);
 console.log("New Status (from req.body):", status);
-

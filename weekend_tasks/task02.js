@@ -1,0 +1,2 @@
+console.log("Explanation: Putting parentheses () executes the function immediately during rendering instead of waiting for a click.");
+console.log("Corrected Line: <button onClick={() => addToCart(item._id)}>Add to Cart</button>");

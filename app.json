@@ -13,7 +13,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FBF7F1"
-      }
+      },
+      "package": "com.muradkhan.hibacaferestaurant"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +30,20 @@
           "resizeMode": "contain",
           "backgroundColor": "#FBF7F1"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "86936d27-7b0b-4eab-99c7-60564a8a8b9a"
+      }
+    }
   }
 }

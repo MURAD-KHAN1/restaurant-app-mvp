@@ -1,4 +1,3 @@
-// Task 20: HTTP status code category helper
 function statusMeaning(code) {
   if (code >= 200 && code < 300) {
     return "success";
@@ -15,4 +14,3 @@ function statusMeaning(code) {
 console.log("201:", statusMeaning(201));
 console.log("404:", statusMeaning(404));
 console.log("500:", statusMeaning(500));
-

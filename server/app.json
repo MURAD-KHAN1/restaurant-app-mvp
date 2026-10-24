@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d6ddb7f3-0366-453b-8787-63cafbd99ee7"
+      }
+    },
+    "android": {
+      "package": "com.muradkhan.server"
+    }
+  }
+}

@@ -1,4 +1,3 @@
-// Task 15: Sequential await vs Promise.all timing comparison
 const { menu, cart } = require("./data");
 
 const fakeMenu = () =>
@@ -25,4 +24,3 @@ async function runComparison() {
 }
 
 runComparison();
-
